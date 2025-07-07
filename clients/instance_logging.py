@@ -1,28 +1,3 @@
-# Fabric notebook source
-
-# METADATA ********************
-
-# META {
-# META   "kernel_info": {
-# META     "name": "jupyter",
-# META     "jupyter_kernel_name": "python3.11"
-# META   },
-# META   "dependencies": {
-# META     "lakehouse": {
-# META       "default_lakehouse": "9fbcae95-6f3d-4f21-96dd-b0a98150a56d",
-# META       "default_lakehouse_name": "RegVil_Lakehouse",
-# META       "default_lakehouse_workspace_id": "a9ae54b0-c5c4-4737-aa47-73797fa29580",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "9fbcae95-6f3d-4f21-96dd-b0a98150a56d"
-# META         }
-# META       ]
-# META     }
-# META   }
-# META }
-
-# CELL ********************
-
 import re
 from typing import Any, Dict, List
 import json
@@ -325,10 +300,3 @@ def _is_valid_phone(phone: str) -> bool:
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
     # Norwegian format: +47 followed by 8 digits, or just 8 digits
     return re.match(r'^(\+47)?[0-9]{8}$', cleaned) is not None
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }

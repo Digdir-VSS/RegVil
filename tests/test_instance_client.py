@@ -1,32 +1,15 @@
-import pytest
-
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 from pathlib import Path
 import json
-import os
-import sys
-import importlib
-import importlib.util
 from typing import Dict, Any
-import uuid
+
+from clients.instance_client import AltinnInstanceClient
 
 
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, "r", encoding="utf-8") as file:
         return json.load(file)
-
-
-def import_fabric_notebook(notebook_path, module_name):
-    """Import a Fabric notebook's Python content"""
-    py_file_path = os.path.join(notebook_path, "notebook-content.py")
-
-    spec = importlib.util.spec_from_file_location(module_name, py_file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
 
 test_prefill_data_with_errors = load_in_json(
     Path(__file__).parent.parent
@@ -51,13 +34,6 @@ client = SecretClient(
 secret = client.get_secret("rapdigtest")
 secret_value = secret.value
 
-exchange_token_funcs = import_fabric_notebook(
-    "auth/exchange_token_funcs.Notebook", "exchange_token_funcs"
-)
-instance_client = import_fabric_notebook(
-    "clients/instance_client.Notebook", "instance_client"
-)
-
 
 def test_update_substatus_success():
     test_config_file = {
@@ -66,7 +42,7 @@ def test_update_substatus_success():
         "application_owner_organisation": "digdir",
         "appname": "regvil-2025-initiell",
     }
-    test_instance_client = instance_client.AltinnInstanceClient.init_from_config(
+    test_instance_client = AltinnInstanceClient.init_from_config(
         test_config_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoints["test"]}
     )
     response_json = test_instance_client.tag_instance_data(
@@ -88,7 +64,7 @@ def test_instance_created_found():
         "application_owner_organisation": "digdir",
         "appname": "regvil-2025-initiell",
     }
-    test_instance_client = instance_client.AltinnInstanceClient.init_from_config(
+    test_instance_client = AltinnInstanceClient.init_from_config(
         test_config_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoints["test"]}
     )
     # Test with existing instance that should have the report_id
@@ -108,7 +84,7 @@ def test_instance_created_not_found():
         "application_owner_organisation": "digdir",
         "appname": "regvil-2025-initiell",
     }
-    test_instance_client = instance_client.AltinnInstanceClient.init_from_config(
+    test_instance_client = AltinnInstanceClient.init_from_config(
         test_config_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoints["test"]}
     )
     # Test with non-existing report_id
@@ -128,7 +104,7 @@ def test_instance_created_different_org():
         "application_owner_organisation": "digdir",
         "appname": "regvil-2025-initiell",
     }
-    test_instance_client = instance_client.AltinnInstanceClient.init_from_config(
+    test_instance_client = AltinnInstanceClient.init_from_config(
         test_config_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoints["test"]}
     )
     

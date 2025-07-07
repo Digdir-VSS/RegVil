@@ -2,42 +2,28 @@ import pytest
 
 from pathlib import Path
 import json
-import os
-import sys
-import importlib
-import importlib.util
 from typing import Dict, Any
+
+from clients.instance_logging import validate_prefill_data, PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker
 
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-def import_fabric_notebook(notebook_path, module_name):
-    """Import a Fabric notebook's Python content"""
-    py_file_path = os.path.join(notebook_path, 'notebook-content.py')
-   
-    spec = importlib.util.spec_from_file_location(module_name, py_file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
 test_prefill_data_with_errors = load_in_json(Path(__file__).parent.parent / "data" / "test_virksomheter_prefill_with_uuid_with_errors.json")
 test_prefill_data = load_in_json(Path(__file__).parent.parent / "data" / "test_virksomheter_prefill_with_uuid.json")
 
-instance_logging = import_fabric_notebook('clients/instance_logging.Notebook', 'instance_logging')
-
 
 def test_prefill_valdiation_correct():
-    assert True == instance_logging.validate_prefill_data(test_prefill_data_with_errors[0])
+    assert True == validate_prefill_data(test_prefill_data_with_errors[0])
 
 @pytest.mark.parametrize("row", test_prefill_data_with_errors[1:])
 def test_prefill_validation_fails(row):
-    with pytest.raises(instance_logging.PrefillValidationError):
-        instance_logging.validate_prefill_data(row)
+    with pytest.raises(PrefillValidationError):
+        validate_prefill_data(row)
 
 def test_transform_flat_to_nested_with_prefill_single():
-    result = instance_logging.transform_flat_to_nested_with_prefill(test_prefill_data[0])
+    result = transform_flat_to_nested_with_prefill(test_prefill_data[0])
     expected = {
         "Prefill": {
             "AnsvarligDepartement": {
@@ -76,7 +62,7 @@ def test_missing_key_raises_error():
         "AnsvarligDepartement.Navn": "A",
     }
     with pytest.raises(KeyError):
-        instance_logging.transform_flat_to_nested_with_prefill(flat_record)
+        transform_flat_to_nested_with_prefill(flat_record)
 
 
 def test_returns_true_when_exact_match_found():
@@ -94,7 +80,7 @@ def test_returns_true_when_exact_match_found():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "target-uuid-123")
     assert result is True
 
@@ -113,7 +99,7 @@ def test_returns_false_when_org_not_found():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("999999999", "some-uuid")
     assert result is False
     
@@ -132,7 +118,7 @@ def test_returns_false_when_report_id_not_found():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "different-uuid")
     assert result is False
     
@@ -151,7 +137,7 @@ def test_returns_false_when_wrong_event_type():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "target-uuid")
     assert result is False
     
@@ -175,7 +161,7 @@ def test_returns_true_with_multiple_events_target_first():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "target-uuid")
     assert result is True
     
@@ -204,7 +190,7 @@ def test_returns_true_with_multiple_events_target_last():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "target-uuid")
     assert result is True
     
@@ -228,7 +214,7 @@ def test_returns_true_with_mixed_event_types():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "target-uuid")
     assert result is True
     
@@ -241,7 +227,7 @@ def test_returns_false_when_events_list_empty():
                 }
             }
         }
-    tracker = instance_logging.InstanceTracker(log_data)
+    tracker = InstanceTracker(log_data)
     result = tracker.has_processed_instance("123456789", "any-uuid")
     assert result is False
 
@@ -284,7 +270,7 @@ test_meta_instance_data = {
 
 def test_logging_instance():
 
-    instance_logger = instance_logging.InstanceTracker({"organisations": {}}, "test/path")
+    instance_logger = InstanceTracker({"organisations": {}}, "test/path")
     print(test_meta_instance_data)
     instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data)
 
@@ -321,7 +307,7 @@ def test_logging_instance():
     }
     assert logged_event == expected_event
 
-    instance_logger = instance_logging.InstanceTracker({"organisations": {"previous-org-nr":{}}}, "test/path")
+    instance_logger = InstanceTracker({"organisations": {"previous-org-nr":{}}}, "test/path")
     instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data)
     # Extract the logged event
     logged_event = instance_logger.log_file["organisations"]["311138693"]["events"][0].copy()
@@ -348,7 +334,7 @@ def test_logging_instance():
     assert logged_event == expected_event
     assert list(instance_logger.log_file["organisations"].keys()) == ["previous-org-nr", "311138693"]
 
-    logger = instance_logging.InstanceTracker({"organisations": {}}, "test/path")
+    logger = InstanceTracker({"organisations": {}}, "test/path")
     logger.logging_instance("311138693", "uuid-1", test_meta_instance_data)
     logger.logging_instance("311138693", "uuid-2", test_meta_instance_data)
 
@@ -357,7 +343,7 @@ def test_logging_instance():
     assert events[0]["digitaliseringstiltak_report_id"] == "uuid-1"
     assert events[1]["digitaliseringstiltak_report_id"] == "uuid-2"
 
-    logger = instance_logging.InstanceTracker({"organisations": {}}, "test/path")
+    logger = InstanceTracker({"organisations": {}}, "test/path")
     logger.logging_instance("311138693", "uuid-1", test_meta_instance_data)
     first_id = logger.log_changes["311138693"]["digitaliseringstiltak_report_id"]
 
@@ -368,7 +354,7 @@ def test_logging_instance():
     assert second_id == "uuid-2"
     assert len(logger.log_changes) == 1
 
-    logger = instance_logging.InstanceTracker({"organisations": {}}, "test/path")
+    logger = InstanceTracker({"organisations": {}}, "test/path")
     mismatching_meta = test_meta_instance_data.copy()
     mismatching_meta['instanceOwner'] = mismatching_meta['instanceOwner'].copy()
     mismatching_meta['instanceOwner']['organisationNumber'] = "999999999"  # Not matching

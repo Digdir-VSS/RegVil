@@ -1,64 +1,14 @@
-# Fabric notebook source
-
-# METADATA ********************
-
-# META {
-# META   "kernel_info": {
-# META     "name": "synapse_pyspark"
-# META   },
-# META   "dependencies": {
-# META     "lakehouse": {
-# META       "default_lakehouse": "9fbcae95-6f3d-4f21-96dd-b0a98150a56d",
-# META       "default_lakehouse_name": "RegVil_Lakehouse",
-# META       "default_lakehouse_workspace_id": "a9ae54b0-c5c4-4737-aa47-73797fa29580",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "9fbcae95-6f3d-4f21-96dd-b0a98150a56d"
-# META         }
-# META       ]
-# META     },
-# META     "environment": {
-# META       "environmentId": "cfc485be-bcb5-412e-9356-f6b9743f7fd5",
-# META       "workspaceId": "5cce3fd5-2dac-41a7-a0e4-acfd383bdb8f"
-# META     }
-# META   }
-# META }
-
-# CELL ********************
 from functools import wraps
 from typing import Callable, Dict, Optional, Tuple, List
 import requests
 import logging
 import json
 import uuid
-from datetime import datetime
+import datetime as dt
 from unittest.mock import Mock
-import os
-import importlib
-import sys
 
+from auth.exchange_token_funcs import exchange_token
 
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-def import_fabric_notebook(notebook_path, module_name):
-    """Import a Fabric notebook's Python content"""
-    py_file_path = os.path.join(notebook_path, 'notebook-content.py')
-   
-    spec = importlib.util.spec_from_file_location(module_name, py_file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
- 
-# Import your notebooks
-exchange_token_funcs = import_fabric_notebook('auth/exchange_token_funcs.Notebook', 'exchange_token_funcs')
 
 def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) -> Dict[str, str]:
     if not list_of_data_instance_meta_info:
@@ -92,30 +42,12 @@ def extract_instances_ids(data_storage_extract):
         )
     return instances
 
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 def get_default_headers(bearer_token: str) -> Dict[str, str]:
     return {
             "accept": "application/json",
             "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json"
         }
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
 
 def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional[Dict[str, str]] = None, params: Optional[Dict[str, str]] = None, files: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
     try:
@@ -152,7 +84,7 @@ def generate_mock_guid() -> str:
     return str(uuid.uuid4())
 
 def mock_update_substatus(instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str) -> Mock:
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = dt.datetime.utcnow().isoformat() + "Z"
     # Construct mock response data
     response_data = {
         "instanceOwner": {
@@ -186,7 +118,7 @@ def mock_post_new_instance(header: Dict[str, str], files: Dict[str, Tuple[str, s
     instance_content = json.loads(files["instance"][1])
     datamodel_content = json.loads(files["DataModel"][1])
 
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = dt.datetime.utcnow().isoformat() + "Z"
     instance_guid = generate_mock_guid()
     party_id = "51625403"  # Simulated party ID
     org_number = instance_content["instanceOwner"]["organisationNumber"]
@@ -247,14 +179,6 @@ def mock_post_new_instance(header: Dict[str, str], files: Dict[str, Tuple[str, s
     
     return mock_response
 
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
 
 class AltinnInstanceClient:
 
@@ -272,7 +196,7 @@ class AltinnInstanceClient:
 
     def _get_headers(self, content_type=None):
         """Get fresh headers with new token"""
-        token = exchange_token_funcs.exchange_token(
+        token = exchange_token(
             self.maskinport_client, 
             self.secret_value, 
             self.maskinporten_endpoint
