@@ -86,7 +86,7 @@ def test_returns_true_when_exact_match_found():
                 "123456789": {
                     "events": [
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "target-uuid-123",
                             "org_number": "123456789"
                         }
@@ -105,7 +105,7 @@ def test_returns_false_when_org_not_found():
                 "123456789": {
                     "events": [
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "some-uuid",
                             "org_number": "123456789"
                         }
@@ -124,7 +124,7 @@ def test_returns_false_when_report_id_not_found():
                 "123456789": {
                     "events": [
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "existing-uuid",
                             "org_number": "123456789"
                         }
@@ -162,12 +162,12 @@ def test_returns_true_with_multiple_events_target_first():
                 "123456789": {
                     "events": [
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "target-uuid",
                             "org_number": "123456789"
                         },
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "other-uuid",
                             "org_number": "123456789"
                         }
@@ -186,17 +186,17 @@ def test_returns_true_with_multiple_events_target_last():
                 "123456789": {
                     "events": [
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "other-uuid-1",
                             "org_number": "123456789"
                         },
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "other-uuid-2",
                             "org_number": "123456789"
                         },
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "target-uuid",
                             "org_number": "123456789"
                         }
@@ -220,7 +220,7 @@ def test_returns_true_with_mixed_event_types():
                             "org_number": "123456789"
                         },
                         {
-                            "event_type": "skjema_instance_created",
+                            "event_type": "initiell_skjema_instance_created",
                             "digitaliseringstiltak_report_id": "target-uuid",
                             "org_number": "123456789"
                         }
@@ -301,7 +301,7 @@ def test_logging_instance():
     logged_event = instance_logger.log_changes["311138693"].copy()
     logged_event.pop("processed_timestamp")
     expected_event = {
-        'event_type': 'skjema_instance_created',
+        'event_type': 'initiell_skjema_instance_created',
         'digitaliseringstiltak_report_id': '123-uuid',
         'org_number': '311138693',
         'virksomhets_name': 'OMKOMMEN TRU TIGER AS',
@@ -327,7 +327,7 @@ def test_logging_instance():
     logged_event = instance_logger.log_file["organisations"]["311138693"]["events"][0].copy()
     logged_event.pop("processed_timestamp")
     expected_event = {
-        'event_type': 'skjema_instance_created',
+        'event_type': 'initiell_skjema_instance_created',
         'digitaliseringstiltak_report_id': '123-uuid',
         'org_number': '311138693',
         'virksomhets_name': 'OMKOMMEN TRU TIGER AS',

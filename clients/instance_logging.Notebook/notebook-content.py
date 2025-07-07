@@ -33,7 +33,7 @@ import shutil
 class PrefillValidationError(Exception):
     pass
 
-def _write_json_file(log_changes: Dict[str, Any], log_data: Dict[str, Any], file_path: str) -> None:
+def _write_json_file(log_data: Dict[str, Any], file_path: str) -> None:
     file_path_str = str(file_path)
 
     # 1. Load existing data
@@ -41,16 +41,6 @@ def _write_json_file(log_changes: Dict[str, Any], log_data: Dict[str, Any], file
         backup_path = file_path_str.replace('.json', f'_backup_log.json')
         shutil.copy2(file_path_str, backup_path)
     
-    # 2. Merge new data with existing (append new events)
-    for org_number, org_data in log_changes.get("organisations", {}).items():
-        if org_number not in log_data["organisations"]:
-            log_data["organisations"][org_number] = {"events": []}
-        
-        # Append new events to existing events
-        new_events = org_data.get("events", [])
-        log_data["organisations"][org_number]["events"].extend(new_events)
-    
-    # 3. Write merged data
     with open(file_path_str, 'w', encoding='utf-8') as f:
         json.dump(log_data, f, ensure_ascii=False, indent=2)
 
@@ -131,7 +121,7 @@ class InstanceTracker:
     def save_to_disk(self) -> None:
         if not self.log_path:
             raise ValueError("No log file path set.")
-        _write_json_file(self.log_changes, self.log_file, self.log_path)
+        _write_json_file(self.log_file, self.log_path)
         
         # Clear changes after saving
         self.log_changes.clear()
