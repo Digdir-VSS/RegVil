@@ -272,16 +272,16 @@ def test_logging_instance():
 
     instance_logger = InstanceTracker({"organisations": {}}, "test/path")
     print(test_meta_instance_data)
-    instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data)
+    instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data, "initiell_skjema_instance_created")
 
     with pytest.raises(ValueError, match="Organization number and report ID cannot be empty"):
-        instance_logger.logging_instance("", "123-uuid", test_meta_instance_data)
+        instance_logger.logging_instance("", "123-uuid", test_meta_instance_data, "initiell_skjema_instance_created")
 
     with pytest.raises(ValueError, match="Organization number and report ID cannot be empty"):
-        instance_logger.logging_instance("311138693", "", test_meta_instance_data)
+        instance_logger.logging_instance("311138693", "", test_meta_instance_data, "initiell_skjema_instance_created")
     
     with pytest.raises(ValueError, match="Instance meta data cannot be empty"):
-        instance_logger.logging_instance("311138693", "123-uuid", {})
+        instance_logger.logging_instance("311138693", "123-uuid", {}, "initiell_skjema_instance_created")
 
     # Extract the logged event
     logged_event = instance_logger.log_changes["311138693"].copy()
@@ -308,7 +308,7 @@ def test_logging_instance():
     assert logged_event == expected_event
 
     instance_logger = InstanceTracker({"organisations": {"previous-org-nr":{}}}, "test/path")
-    instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data)
+    instance_logger.logging_instance("311138693", "123-uuid", test_meta_instance_data, "initiell_skjema_instance_created")
     # Extract the logged event
     logged_event = instance_logger.log_file["organisations"]["311138693"]["events"][0].copy()
     logged_event.pop("processed_timestamp")
@@ -335,8 +335,8 @@ def test_logging_instance():
     assert list(instance_logger.log_file["organisations"].keys()) == ["previous-org-nr", "311138693"]
 
     logger = InstanceTracker({"organisations": {}}, "test/path")
-    logger.logging_instance("311138693", "uuid-1", test_meta_instance_data)
-    logger.logging_instance("311138693", "uuid-2", test_meta_instance_data)
+    logger.logging_instance("311138693", "uuid-1", test_meta_instance_data, "initiell_skjema_instance_created")
+    logger.logging_instance("311138693", "uuid-2", test_meta_instance_data, "initiell_skjema_instance_created")
 
     events = logger.log_file["organisations"]["311138693"]["events"]
     assert len(events) == 2
@@ -344,10 +344,10 @@ def test_logging_instance():
     assert events[1]["digitaliseringstiltak_report_id"] == "uuid-2"
 
     logger = InstanceTracker({"organisations": {}}, "test/path")
-    logger.logging_instance("311138693", "uuid-1", test_meta_instance_data)
+    logger.logging_instance("311138693", "uuid-1", test_meta_instance_data, "initiell_skjema_instance_created")
     first_id = logger.log_changes["311138693"]["digitaliseringstiltak_report_id"]
 
-    logger.logging_instance("311138693", "uuid-2", test_meta_instance_data)
+    logger.logging_instance("311138693", "uuid-2", test_meta_instance_data, "initiell_skjema_instance_created")
     second_id = logger.log_changes["311138693"]["digitaliseringstiltak_report_id"]
 
     assert first_id == "uuid-1"
@@ -360,4 +360,4 @@ def test_logging_instance():
     mismatching_meta['instanceOwner']['organisationNumber'] = "999999999"  # Not matching
 
     with pytest.raises(ValueError, match="Organization numbers do not match"):
-        logger.logging_instance("311138693", "123-uuid", mismatching_meta)
+        logger.logging_instance("311138693", "123-uuid", mismatching_meta, "initiell_skjema_instance_created")

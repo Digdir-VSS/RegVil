@@ -74,9 +74,9 @@ def main():
 
         if created_instance.status_code == 201:
                 logger.info(f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}")
-                tracker.logging_instance(prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"], prefill_data_row["digitaliseringstiltak_report_id"], created_instance.json())
+                tracker.logging_instance(prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"], prefill_data_row["digitaliseringstiltak_report_id"], created_instance.json(), "initiell_skjema_instance_created")
                 tracker.save_to_disk()
-                tag_result = regvil_instance_client.tag_instance_data(instance_meta_data["instanceOwner"]["partyId"], instance_meta_data["id"], instance_client_data_meta_data["id"], test_config_client_file["tag"])
+                tag_result = regvil_instance_client.tag_instance_data(instance_meta_data["instanceOwner"]["partyId"], instance_meta_data["id"], instance_client_data_meta_data["id"], "InitiellSkjemaLevert")
                 if tag_result.status_code == 201:
                     logger.info(f"Successfully tagged instance for org {org_number}")
                 else:

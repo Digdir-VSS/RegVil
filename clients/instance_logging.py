@@ -51,9 +51,16 @@ class InstanceTracker:
                 event.get("digitaliseringstiltak_report_id") == digitaliseringstiltak_report_id):
                 return True
         return False
+    
+    def get_events_from_log(self, event_type: str) -> List[Dict[str, Any]]:
+        all_look_up_events = []
+        for _, meta_info in self.log_file["organisations"].items():
+            look_up_events = [event for event in meta_info["events"] if event["event_type"] == event_type]
+            all_look_up_events.extend(look_up_events)
+        return all_look_up_events
 
         
-    def logging_instance(self, org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict):
+    def logging_instance(self, org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
           raise ValueError("Organization number and report ID cannot be empty")
         
@@ -65,7 +72,7 @@ class InstanceTracker:
         
         datamodel_metadata = get_meta_data_info(instance_meta_data["data"])
         instance_log_entry = {
-            "event_type": "initiell_skjema_instance_created",
+            "event_type": event_type,#"initiell_skjema_instance_created"
             "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id, 
             "org_number": org_number,
             "virksomhets_name": instance_meta_data.get("instanceOwner").get("party").get("name"),
