@@ -11,7 +11,7 @@ from clients.instance_logging import InstanceTracker, validate_prefill_data, tra
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    filename=Path(__file__).parent.parent / "data" / "altinn_logging.log"
+    filename=Path(__file__).parent / "data" / "altinn_logging.log"
 )
 logger = logging.getLogger(__name__)
 
@@ -26,19 +26,19 @@ def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
 
 def main():
     logger.info("Starting Altinn survey sending instance processing")
-    maskinport_client = load_in_json(Path(__file__).parent.parent / "data" / "maskinporten_config.json")
-    maskinporten_endpoints = load_in_json(Path(__file__).parent.parent / "data" / "maskinporten_endpoints.json")
-    test_config_client_file = load_in_json(Path(__file__).parent.parent / "data" / "test_config_client_file.json")
+    maskinport_client = load_in_json(Path(__file__).parent / "data" / "maskinporten_config.json")
+    maskinporten_endpoints = load_in_json(Path(__file__).parent / "data" / "maskinporten_endpoints.json")
+    test_config_client_file = load_in_json(Path(__file__).parent / "data" / "test_config_client_file.json")
     maskinporten_endpoint = maskinporten_endpoints[test_config_client_file["environment"]]
-    test_prefill_data = load_in_json(Path(__file__).parent.parent / "data" / "test_virksomheter_prefill_with_uuid.json")
+    test_prefill_data = load_in_json(Path(__file__).parent / "data" / "test_virksomheter_prefill_with_uuid.json")
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(test_config_client_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoint})
 
-    tracker = InstanceTracker.from_log_file(Path(__file__).parent.parent / "data" / "instance_log" / "instance_log.json")
+    tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / "instance_log" / "instance_log.json")
     logger.info(f"Processing {len(test_prefill_data)} organizations")
 
-    for prefill_data_row in test_prefill_data[8:9]:
-        validate_prefill_data(prefill_data_row)
+    for prefill_data_row in test_prefill_data[0:1]:
+        #validate_prefill_data(prefill_data_row)
         data_model = transform_flat_to_nested_with_prefill(prefill_data_row)
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
         report_id = prefill_data_row["digitaliseringstiltak_report_id"]
@@ -54,7 +54,6 @@ def main():
             continue
         
         logger.info(f"Creating new instance for org {org_number} and report id {report_id}")
-        data_model = transform_flat_to_nested_with_prefill(prefill_data_row)
 
         instance_data = {"appId" : "digdir/regvil-2025-initiell",    
                 "instanceOwner": {"personNumber": None,
@@ -63,16 +62,16 @@ def main():
                 "visibleAfter": "2025-06-29T00:00:00Z"
         }
         files = {
-                    'instance': ('instance.json', json.dumps(instance_data), 'application/json'),
-                    'DataModel': ('datamodel.json', json.dumps(data_model), 'application/json')
+                    'instance': ('instance.json', json.dumps(instance_data, ensure_ascii=False), 'application/json'),
+                    'DataModel': ('datamodel.json', json.dumps(data_model, ensure_ascii=False), 'application/json')
         }
 
         created_instance = regvil_instance_client.post_new_instance(files)
-        instance_meta_data = created_instance.json()
-
-        instance_client_data_meta_data = get_meta_data_info(instance_meta_data["data"])
 
         if created_instance.status_code == 201:
+                instance_meta_data = created_instance.json()
+                instance_client_data_meta_data = get_meta_data_info(instance_meta_data["data"])
+
                 logger.info(f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}")
                 tracker.logging_instance(prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"], prefill_data_row["digitaliseringstiltak_report_id"], created_instance.json(), "initiell_skjema_instance_created")
                 tracker.save_to_disk()

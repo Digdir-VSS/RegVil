@@ -146,7 +146,6 @@ def transform_flat_to_nested_with_prefill(flat_record):
             "Tiltak": {
                 "Nummer": get_required_key(flat_record,"Tiltak.Nummer"),
                 "Tekst":  get_required_key(flat_record,"Tiltak.Tekst"),
-                "Kortnavn":  get_required_key(flat_record,"Tiltak.Kortnavn"),
                 "ErDeltiltak":  get_required_key(flat_record,"Tiltak.ErDeltiltak")
             },
             "Kapittel": {
@@ -173,7 +172,6 @@ def validate_prefill_data(prefill_data_row: Dict[str, Any]) -> bool:
         "Kontaktperson.EPostadresse",
         "Tiltak.Nummer",
         "Tiltak.Tekst", 
-        "Tiltak.Kortnavn",
         "Tiltak.ErDeltiltak",
         "Kapittel.Nummer",
         "Kapittel.Tekst",

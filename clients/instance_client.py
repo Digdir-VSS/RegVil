@@ -57,26 +57,32 @@ def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional
             return response
         elif response.status_code == 404:
             logging.warning(f"Resource not found: {method} {url}")
+        elif response.status_code == 500:
+            logging.warning(f"Error code {response.status_code} Error message {response.json()}")
         elif response.status_code == 403:
             logging.warning(f"Access denied: {method} {url}")
         elif response.status_code == 401:
             logging.warning(f"Unauthorized access - check authentication token")
         else:
             logging.warning(f"API call failed with status {response.status_code}: {response.text}")
-        return None
+        
+        if response.status_code >= 400:
+            response.raise_for_status()
+        return response
             
     except requests.exceptions.ConnectionError:
         logging.error(f"Connection error when calling {url}")
-        return None
+
     except requests.exceptions.Timeout:
         logging.error(f"Timeout when calling {url}")
-        return None
+
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {str(e)}")
-        return None
+
     except Exception as e:
         logging.error(f"Unexpected error in API call: {str(e)}")
-        return None
+        
+    return None
 
 
 def generate_mock_guid() -> str:

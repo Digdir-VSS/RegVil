@@ -44,7 +44,7 @@ def main():
 
     downloaded_instance_ids = {event["instanceId"] for event in list_initiell_skjema_downloaded}
     pending_instances = [event for event in list_initiell_skjema_created if event["instanceId"] not in downloaded_instance_ids]
-    
+
     for pending_instance in pending_instances:
         instance_meta = regvil_instance_client.get_instance(pending_instance["instancePartyId"], pending_instance["instanceId"])
 
@@ -56,8 +56,7 @@ def main():
             instance_meta_info = instance_meta.json()
             meta_data = get_meta_data_info(instance_meta_info["data"])
             tags = meta_data["tags"]
-
-            if tags == ["InitiellSkjemaLevert"] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
+            if tags == ["InitiellSkjemaLevert"] and meta_data["lastChangedBy"] != meta_data["createdBy"]:
                 instance_data = regvil_instance_client.get_instance_data(
                     pending_instance["instancePartyId"],
                     pending_instance["instanceId"],
