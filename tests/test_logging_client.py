@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 from typing import Dict, Any
 
-from clients.instance_logging import validate_prefill_data, PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker
+from clients.instance_logging import validate_prefill_data, PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker, find_event_by_instance
 
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
@@ -361,3 +361,45 @@ def test_logging_instance():
 
     with pytest.raises(ValueError, match="Organization numbers do not match"):
         logger.logging_instance("311138693", "123-uuid", mismatching_meta, "initiell_skjema_instance_created")
+
+@pytest.fixture
+def sample_log_data():
+    return {
+        "organisations": {
+            "123456789": {
+                "events": [
+                    {
+                        "instanceId": "456/abc123",
+                        "event_type": "initiell_skjema_instance_created",
+                        "some_other_field": "value"
+                    },
+                    {
+                        "instanceId": "456/def456",
+                        "event_type": "something_else"
+                    }
+                ]
+            }
+        }
+    }
+
+def test_find_matching_event(sample_log_data):
+    result = find_event_by_instance(sample_log_data, instance_id="abc123", event_type="initiell_skjema_instance_created")
+    assert result["instanceId"] == "456/abc123"
+
+def test_no_matching_instance(sample_log_data):
+    with pytest.raises(ValueError, match="No matching event found"):
+        find_event_by_instance(sample_log_data, instance_id="xyz999", event_type="initiell_skjema_instance_created")
+
+def test_no_matching_event_type(sample_log_data):
+    with pytest.raises(ValueError, match="No matching event found"):
+        find_event_by_instance(sample_log_data, instance_id="abc123", event_type="not_a_real_event")
+
+def test_empty_organisations():
+    log_data = {"organisations": {}}
+    with pytest.raises(ValueError, match="Log data is empty"):
+        find_event_by_instance(log_data, "abc123", "initiell_skjema_instance_created")
+
+def test_missing_organisations_key():
+    log_data = {}
+    with pytest.raises(ValueError, match="Log data is empty"):
+        find_event_by_instance(log_data, "abc123", "initiell_skjema_instance_created")

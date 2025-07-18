@@ -8,6 +8,21 @@ import shutil
 class PrefillValidationError(Exception):
     pass
 
+def find_event_by_instance(log_data: dict, instance_id: str, event_type: str):
+    organisations = log_data.get("organisations", {})
+    if not organisations:
+        raise ValueError("Log data is empty.")
+    for _, org_data in organisations.items():
+        events = org_data.get("events", [])
+        for event in events:
+            _, event_instance_id = event.get("instanceId").split('/')
+            if (event.get("event_type") == event_type) & (event_instance_id == instance_id):
+                return event
+    raise ValueError(
+        f"No matching event found for instance_id='{instance_id}', "
+        f"event_type='{event_type}' in log data."
+    )
+
 def _write_json_file(log_data: Dict[str, Any], file_path: str) -> None:
     file_path_str = str(file_path)
 
