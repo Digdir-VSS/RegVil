@@ -287,10 +287,3 @@ class AltinnInstanceClient:
     
     def mock_test_update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None):
         return mock_update_substatus(instanceOwnerPartyId, instanceGuid, digitaliseringstiltak_report_id)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }

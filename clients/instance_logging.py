@@ -73,7 +73,28 @@ class InstanceTracker:
             look_up_events = [event for event in meta_info["events"] if event["event_type"] == event_type]
             all_look_up_events.extend(look_up_events)
         return all_look_up_events
+      
+    def logging_varlsing(self, org_number: str, org_name: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str):
+        if not org_number or not digitaliseringstiltak_report_id:
+          raise ValueError("Organization number and report ID cannot be empty")
+        
+        instance_log_entry = {
+            "event_type": event_type,
+            "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id, 
+            "org_number": org_number,
+            "virksomhets_name":org_name,
+            "processed_timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+            "shipment_id": shipment_id, 
+            "recipientEmail": recipientEmail
+        }
 
+            # Simplified - self.log_file["organisations"] already exists from initialization
+        if org_number not in self.log_file["organisations"]:
+            self.log_file["organisations"][org_number] = {"events": []}
+
+
+        self.log_file["organisations"][org_number]["events"].append(instance_log_entry)
+        self.log_changes[org_number] = instance_log_entry
         
     def logging_instance(self, org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:

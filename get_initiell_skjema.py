@@ -81,12 +81,13 @@ def main():
                     "InitiellSkjemaDownloaded"
                 )
 
-            tracker.logging_instance(
+                tracker.logging_instance(
                     pending_instance['org_number'],
                     pending_instance["digitaliseringstiltak_report_id"],
                     instance_meta_info,
                     "initiell_skjema_instance_downloaded"
                 )
+
             tracker.save_to_disk()
 
             logger.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
