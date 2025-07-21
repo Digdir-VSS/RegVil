@@ -3,3 +3,4 @@ requests
 azure-storage-blob
 azure-identity
 python-dotenv
+azure-keyvault-secrets
