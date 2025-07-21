@@ -4,10 +4,14 @@ from azure.identity import DefaultAzureCredential
 from pathlib import Path
 import json
 import logging
+from dotenv import load_dotenv
+import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 credential = DefaultAzureCredential()
 client = SecretClient(
-    vault_url="https://keyvaultvss.vault.azure.net/", credential=credential
+    vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential
 )
-secret = client.get_secret("rapdigtest")
+secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 

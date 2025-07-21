@@ -4,10 +4,13 @@ from azure.identity import DefaultAzureCredential
 from pathlib import Path
 import json
 import logging
-import uuid
+from dotenv import load_dotenv
+import os
 
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,8 +20,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 credential = DefaultAzureCredential()
-client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
-secret = client.get_secret("rapdigtest")
+client = SecretClient(
+    vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential
+)
+secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
