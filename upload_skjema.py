@@ -13,13 +13,6 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    filename=Path(__file__).parent / "data" / "altinn_logging.log",
-)
-logger = logging.getLogger(__name__)
-
 credential = DefaultAzureCredential()
 client = SecretClient(
     vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential
@@ -34,7 +27,7 @@ def load_in_json(path_to_json_file: Path) -> Any:
 
 
 def main() -> None:
-    logger.info("Starting Altinn survey sending instance processing")
+    logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "data"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", "test")
     test_prefill_data = load_in_json(
@@ -48,7 +41,7 @@ def main() -> None:
     tracker = InstanceTracker.from_log_file(
         Path(__file__).parent / "data" / "instance_log" / "instance_log.json"
     )
-    logger.info(f"Processing {len(test_prefill_data)} organizations")
+    logging.info(f"Processing {len(test_prefill_data)} organizations")
 
     for prefill_data_row in test_prefill_data:
         config.app_config.validate_prefill_data(prefill_data_row)
@@ -56,22 +49,22 @@ def main() -> None:
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
         report_id = prefill_data_row["digitaliseringstiltak_report_id"]
 
-        logger.info(f"Processing org {org_number}, report {report_id}")
+        logging.info(f"Processing org {org_number}, report {report_id}")
 
         if tracker.has_processed_instance(org_number, report_id):
-            logger.info(
+            logging.info(
                 f"Skipping org {org_number} and report {report_id} - already in instance log"
             )
             continue
         if regvil_instance_client.instance_created(
             org_number, config.app_config.tag["tag_instance"]
         ):
-            logger.info(
+            logging.info(
                 f"Skipping org {org_number} and report {report_id}- already in storage"
             )
             continue
 
-        logger.info(
+        logging.info(
             f"Creating new instance for org {org_number} and report id {report_id}"
         )
         instance_data = {
@@ -107,7 +100,7 @@ def main() -> None:
                 instance_meta_data["data"]
             )
 
-            logger.info(
+            logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
             tracker.logging_instance(
@@ -124,12 +117,12 @@ def main() -> None:
                 config.app_config.tag["tag_instance"],
             )
             if tag_result.status_code == 201:
-                logger.info(f"Successfully tagged instance for org {org_number}")
+                logging.info(f"Successfully tagged instance for org {org_number}")
             else:
-                logger.error(f"Failed to tag instance for org {org_number}")
+                logging.error(f"Failed to tag instance for org {org_number}")
 
         else:
-            logger.error(
+            logging.error(
                 f"Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}"
             )
             try:
@@ -138,7 +131,7 @@ def main() -> None:
             except Exception:
                 error_msg = created_instance.text or "No error details"
 
-                logger.warning(
+                logging.warning(
                     f"API Error: Org {prefill_data_row['AnsvarligVirksomhet.Organisasjonsnummer']}, "
                     f"Report {prefill_data_row['digitaliseringstiltak_report_id']} - "
                     f"Status: {created_instance.status_code} - "

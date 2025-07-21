@@ -3,7 +3,6 @@ from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential 
 from pathlib import Path
 import json
-import logging
 from dotenv import load_dotenv
 import os
 
@@ -11,13 +10,6 @@ from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 
 load_dotenv()
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filename=Path(__file__).parent / "data" / "altinn_varsling_logging.log"
-)
-logger = logging.getLogger(__name__)
 
 credential = DefaultAzureCredential()
 client = SecretClient(
@@ -56,7 +48,6 @@ def main():
         status = varsling_client.get_shipment_status(shipment_id)
         tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / "instance_log" / "instance_log.json")
         tracker.logging_varlsing(org_number="311045407", org_name="TestVirksomhet", digitaliseringstiltak_report_id="abc-def-ghi-jkl-mno-pqr", shipment_id=status.json(), recipientEmail=recipient_email, event_type="Varsling1Send")
-        print(tracker.log_changes)
         tracker.save_to_disk()
 
 if __name__ == "__main__":
