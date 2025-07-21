@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict, Optional, Tuple, List
 import requests
 import logging
@@ -7,7 +8,7 @@ import datetime as dt
 from unittest.mock import Mock
 
 from auth.exchange_token_funcs import exchange_token
-
+from config.config_loader import APIConfig
 
 def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) -> Dict[str, str]:
     if not list_of_data_instance_meta_info:
@@ -227,15 +228,17 @@ class AltinnInstanceClient:
         return headers
 
     @classmethod
-    def init_from_config(cls, app_config_file: Dict[str, str], maskinport_config_file: Dict[str, str]):
+    def init_from_config(cls, api_config: APIConfig) -> AltinnInstanceClient:
         return cls(
-            base_app_url=app_config_file["base_app_url"],
-            base_platfrom_url=app_config_file["base_platfrom_url"],
-            application_owner_organisation=app_config_file["application_owner_organisation"], 
-            appname=app_config_file["appname"], 
-            maskinport_client=maskinport_config_file["maskinport_client"],
-            secret_value=maskinport_config_file["secret_value"], 
-            maskinporten_endpoint=maskinport_config_file["maskinporten_endpoint"]
+            base_app_url=api_config.altinn_client.base_app_url,
+            base_platfrom_url=api_config.altinn_client.base_platfrom_url,
+            application_owner_organisation=api_config.altinn_client.application_owner_organisation,
+            appname=api_config.app_config.app_name,
+            maskinport_client_id=api_config.maskinporten_config_instance.client_id,
+            maskinport_kid=api_config.maskinporten_config_instance.kid,
+            maskinport_scope=api_config.maskinporten_config_instance.scope,
+            secret_value=api_config.secret_value,
+            maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
     
     def get_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
