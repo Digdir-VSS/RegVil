@@ -187,7 +187,18 @@ def mock_post_new_instance(header: Dict[str, str], files: Dict[str, Tuple[str, s
 
 class AltinnInstanceClient:
 
-    def __init__(self, base_app_url: str, base_platfrom_url: str,  application_owner_organisation: str, appname: str, maskinport_client: str, secret_value: str, maskinporten_endpoint: str):
+    def __init__(
+        self,
+        base_app_url: str,
+        base_platfrom_url: str,
+        application_owner_organisation: str,
+        appname: str,
+        maskinport_client_id: str,
+        maskinport_kid: str,
+        maskinport_scope: str,
+        secret_value: str,
+        maskinporten_endpoint: str,
+    ):
         self.base_app_url = base_app_url
         self.base_platfrom_url = base_platfrom_url
         self.application_owner_organisation = application_owner_organisation
@@ -195,21 +206,22 @@ class AltinnInstanceClient:
         self.basePathApp = f"{self.base_app_url}/{self.application_owner_organisation}/{self.appname}/instances"
         self.basePathPlatform = f"{self.base_platfrom_url}"
                 # Add token management
-        self.maskinport_client = maskinport_client
+        self.maskinport_client_id = maskinport_client_id
+        self.maskinport_kid = maskinport_kid
+        self.maskinport_scope = maskinport_scope
         self.secret_value = secret_value
         self.maskinporten_endpoint = maskinporten_endpoint
 
-    def _get_headers(self, content_type=None):
+    def _get_headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
         """Get fresh headers with new token"""
         token = exchange_token(
-            self.maskinport_client, 
-            self.secret_value, 
-            self.maskinporten_endpoint
+            maskinporten_endpoint=self.maskinporten_endpoint,
+            secret=self.secret_value,
+            client_id=self.maskinport_client_id,
+            kid=self.maskinport_kid,
+            scope=self.maskinport_scope,
         )
-        headers = {
-            "accept": "application/json",
-            "Authorization": f"Bearer {token}"
-        }
+        headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
         if content_type:
             headers["Content-Type"] = content_type
         return headers
