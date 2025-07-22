@@ -17,13 +17,6 @@ def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filename=Path(__file__).parent / "data" / "check_update_data_logging.log"
-)
-logger = logging.getLogger(__name__)
-
 credential = DefaultAzureCredential()
 client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
 secret = client.get_secret("rapdigtest")
@@ -45,7 +38,7 @@ def main():
     instance_meta = regvil_instance_client.get_instance(pending_instance["instancePartyId"], pending_instance["instanceId"])
 
     if not instance_meta:
-        logger.warning(f"No instance metadata returned for {pending_instance['instanceId']}")
+        logging.warning(f"No instance metadata returned for {pending_instance['instanceId']}")
 
     try:
         instance_meta_info = instance_meta.json()
@@ -81,7 +74,7 @@ def main():
                     "InitiellSkjemaDownloaded"
                 )
 
-                tracker.logging_instance(
+            tracker.logging_instance(
                     pending_instance['org_number'],
                     pending_instance["digitaliseringstiltak_report_id"],
                     instance_meta_info,
@@ -90,12 +83,12 @@ def main():
 
             tracker.save_to_disk()
 
-            logger.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
+            logging.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
 
         else:
-                logger.info(f"Already downloaded or invalid tags for: {pending_instance['digitaliseringstiltak_report_id']} - {pending_instance['instanceId']}")
+                logging.info(f"Already downloaded or invalid tags for: {pending_instance['digitaliseringstiltak_report_id']} - {pending_instance['instanceId']}")
     except Exception as e:
-            logger.exception(f"Error processing instance {pending_instance['instanceId']}")
+            logging.exception(f"Error processing instance {pending_instance['instanceId']}")
             raise
 
 
