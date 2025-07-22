@@ -42,7 +42,7 @@ def main() -> None:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
         status = varsling_client.get_shipment_status(shipment_id)
-        tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / "instance_log" / "instance_log.json")
+        tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / os.getenv("ENV")/ "instance_log" / "instance_log.json")
         tracker.logging_varlsing(org_number="311045407", org_name="TestVirksomhet", digitaliseringstiltak_report_id="abc-def-ghi-jkl-mno-pqr", shipment_id=status.json(), recipientEmail=recipient_email, event_type="Varsling1Send")
         tracker.save_to_disk()
 

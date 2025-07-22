@@ -29,9 +29,9 @@ def load_in_json(path_to_json_file: Path) -> Any:
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
-    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", "test")
+    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
     test_prefill_data = load_in_json(
-        Path(__file__).parent / "data" / "test_virksomheter_prefill_with_uuid.json"
+        Path(__file__).parent / "data" /os.getenv("ENV")/ "test_virksomheter_prefill_with_uuid.json"
     )
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(
@@ -39,7 +39,7 @@ def main() -> None:
     )
 
     tracker = InstanceTracker.from_log_file(
-        Path(__file__).parent / "data" / "instance_log" / "instance_log.json"
+        Path(__file__).parent / "data"  /os.getenv("ENV")/ "instance_log" / "instance_log.json"
     )
     logging.info(f"Processing {len(test_prefill_data)} organizations")
 
