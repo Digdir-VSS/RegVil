@@ -94,7 +94,7 @@ def load_full_config(base_path: Path, app_name: str, env: str) -> APIConfig:
     maskinporten_config_instance = MaskinportenConfig(**_load_json(base_path / env / "maskinporten_config_instance.json"))
     maskinporten_config_varsling = MaskinportenConfig(**_load_json(base_path / env / "maskinporten_config_varsling.json"))
     client_config = AltinnClientConfig(**_load_json(base_path / env / "config_client_file.json"))
-    endpoints_config = MaskinportenEndpointsConfig(**_load_json(base_path / "maskinporten_endpoints.json"))
+    endpoints_config = MaskinportenEndpointsConfig(**_load_json(base_path / env /"maskinporten_endpoints.json"))
     workflow_dag = WorkflowDAG(_load_json(base_path / env / "workflow_DAG.json"))
     credential = DefaultAzureCredential()
     secret_client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
