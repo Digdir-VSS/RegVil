@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict, Optional, Tuple, List
 import requests
 import logging
@@ -7,7 +8,7 @@ import datetime as dt
 from unittest.mock import Mock
 
 from auth.exchange_token_funcs import exchange_token
-
+from config.config_loader import APIConfig
 
 def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) -> Dict[str, str]:
     if not list_of_data_instance_meta_info:
@@ -187,7 +188,18 @@ def mock_post_new_instance(header: Dict[str, str], files: Dict[str, Tuple[str, s
 
 class AltinnInstanceClient:
 
-    def __init__(self, base_app_url: str, base_platfrom_url: str,  application_owner_organisation: str, appname: str, maskinport_client: str, secret_value: str, maskinporten_endpoint: str):
+    def __init__(
+        self,
+        base_app_url: str,
+        base_platfrom_url: str,
+        application_owner_organisation: str,
+        appname: str,
+        maskinport_client_id: str,
+        maskinport_kid: str,
+        maskinport_scope: str,
+        secret_value: str,
+        maskinporten_endpoint: str,
+    ):
         self.base_app_url = base_app_url
         self.base_platfrom_url = base_platfrom_url
         self.application_owner_organisation = application_owner_organisation
@@ -195,35 +207,38 @@ class AltinnInstanceClient:
         self.basePathApp = f"{self.base_app_url}/{self.application_owner_organisation}/{self.appname}/instances"
         self.basePathPlatform = f"{self.base_platfrom_url}"
                 # Add token management
-        self.maskinport_client = maskinport_client
+        self.maskinport_client_id = maskinport_client_id
+        self.maskinport_kid = maskinport_kid
+        self.maskinport_scope = maskinport_scope
         self.secret_value = secret_value
         self.maskinporten_endpoint = maskinporten_endpoint
 
-    def _get_headers(self, content_type=None):
+    def _get_headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
         """Get fresh headers with new token"""
         token = exchange_token(
-            self.maskinport_client, 
-            self.secret_value, 
-            self.maskinporten_endpoint
+            maskinporten_endpoint=self.maskinporten_endpoint,
+            secret=self.secret_value,
+            client_id=self.maskinport_client_id,
+            kid=self.maskinport_kid,
+            scope=self.maskinport_scope,
         )
-        headers = {
-            "accept": "application/json",
-            "Authorization": f"Bearer {token}"
-        }
+        headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
         if content_type:
             headers["Content-Type"] = content_type
         return headers
 
     @classmethod
-    def init_from_config(cls, app_config_file: Dict[str, str], maskinport_config_file: Dict[str, str]):
+    def init_from_config(cls, api_config: APIConfig) -> AltinnInstanceClient:
         return cls(
-            base_app_url=app_config_file["base_app_url"],
-            base_platfrom_url=app_config_file["base_platfrom_url"],
-            application_owner_organisation=app_config_file["application_owner_organisation"], 
-            appname=app_config_file["appname"], 
-            maskinport_client=maskinport_config_file["maskinport_client"],
-            secret_value=maskinport_config_file["secret_value"], 
-            maskinporten_endpoint=maskinport_config_file["maskinporten_endpoint"]
+            base_app_url=api_config.altinn_client.base_app_url,
+            base_platfrom_url=api_config.altinn_client.base_platfrom_url,
+            application_owner_organisation=api_config.altinn_client.application_owner_organisation,
+            appname=api_config.app_config.app_name,
+            maskinport_client_id=api_config.maskinporten_config_instance.client_id,
+            maskinport_kid=api_config.maskinporten_config_instance.kid,
+            maskinport_scope=api_config.maskinporten_config_instance.scope,
+            secret_value=api_config.secret_value,
+            maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
     
     def get_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
