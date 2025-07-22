@@ -27,7 +27,7 @@ secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 def main():
-    path_to_config_folder = Path(__file__).parent / "data"
+    path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
     path_to_initiell_skjema_storage = Path(__file__).parent / "data" / os.getenv("ENV") / "data_storage"
 
@@ -45,8 +45,8 @@ def main():
         instance_meta_info = instance_meta.json()
         meta_data = get_meta_data_info(instance_meta_info["data"])
         tags = meta_data["tags"]
-
-        if tags == [config.app_config.tag["tag_instance"]] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
+        if True:
+        #if tags == [config.app_config.tag["tag_instance"]] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
             instance_data = regvil_instance_client.get_instance_data(
                     pending_instance["instancePartyId"],
                     pending_instance["instanceId"],
@@ -63,6 +63,7 @@ def main():
                     },
                     "data": instance_data.json()
                 }
+
 
             party_id, instance_id = pending_instance['instanceId'].split("/")
             filename = f"initiellskjema_{pending_instance['org_number']}_{pending_instance['digitaliseringstiltak_report_id']}_{party_id}_{instance_id}.json"

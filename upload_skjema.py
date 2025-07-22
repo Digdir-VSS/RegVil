@@ -28,7 +28,7 @@ def load_in_json(path_to_json_file: Path) -> Any:
 
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
-    path_to_config_folder = Path(__file__).parent / "data"
+    path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", "test")
     test_prefill_data = load_in_json(
         Path(__file__).parent / "data" / "test_virksomheter_prefill_with_uuid.json"
