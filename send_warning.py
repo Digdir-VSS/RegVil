@@ -3,11 +3,13 @@ from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential 
 from pathlib import Path
 import json
+import logging
 from dotenv import load_dotenv
 import os
 
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
+from config.config_loader import load_full_config
 
 load_dotenv()
 
@@ -22,19 +24,13 @@ def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-def main():
-    maskinport_client = load_in_json(Path(__file__).parent / "data" / "maskinporten_config.json")
-    maskinporten_endpoints = load_in_json(Path(__file__).parent / "data" / "maskinporten_endpoints.json")
-    test_config_client_file = load_in_json(Path(__file__).parent / "data" / "test_config_client_file.json")
-    maskinporten_endpoint = maskinporten_endpoints[test_config_client_file["environment"]]
+def main() -> None:
+    logging.info("Starting Altinn survey sending instance processing")
+    path_to_config_folder = Path(__file__).parent / "data"
+    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", "test")
 
 
-    varsling_client = AltinnVarslingClient(
-    base_url=test_config_client_file["base_varsling_url"],
-    maskinport_client=maskinport_client,
-    secret_value=secret_value,
-    maskinporten_endpoint= maskinporten_endpoint
-)
+    varsling_client = AltinnVarslingClient.init_from_config(config)
     recipient_email = "matthias.boeker@digdir.no"
     response = varsling_client.send_notification(
         recipient_email="matthias.boeker@digdir.no",
