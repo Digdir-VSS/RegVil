@@ -1,13 +1,17 @@
-
 from typing import Any, Dict
 from azure.keyvault.secrets import SecretClient
-from azure.identity import DefaultAzureCredential 
+from azure.identity import DefaultAzureCredential
 from pathlib import Path
 import logging
 import json
+from dotenv import load_dotenv
+import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker, find_event_by_instance
+from config.config_loader import load_full_config
+
+load_dotenv()
 
 def write_to_json(data: Dict[str, Any], path_to_folder: Path, filename: str) -> None:
     with open(path_to_folder / filename, 'w', encoding='utf-8') as file:
@@ -18,23 +22,20 @@ def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
         return json.load(file)
 
 credential = DefaultAzureCredential()
-client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
-secret = client.get_secret("rapdigtest")
+client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential)
+secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 def main():
-    maskinport_client = load_in_json(Path(__file__).parent / "data" / "maskinporten_config.json")
-    maskinporten_endpoints = load_in_json(Path(__file__).parent / "data" / "maskinporten_endpoints.json")
-    test_config_client_file = load_in_json(Path(__file__).parent / "data" / "test_config_client_file.json")
-    maskinporten_endpoint = maskinporten_endpoints[test_config_client_file["environment"]]
-    path_to_initiell_skjema_storage = Path(__file__).parent / "data" / "data_storage" / "initiell_skjema" 
+    path_to_config_folder = Path(__file__).parent / "data"
+    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
+    path_to_initiell_skjema_storage = Path(__file__).parent / "data" / os.getenv("ENV") / "data_storage"
 
-    regvil_instance_client = AltinnInstanceClient.init_from_config(test_config_client_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoint})
-    tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / "instance_log" / "instance_log.json")
+    regvil_instance_client = AltinnInstanceClient.init_from_config(config)
+    tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" /os.getenv("ENV") / "instance_log" / "instance_log.json")
 
-    list_initiell_skjema_created = tracker.get_events_from_log("initiell_skjema_instance_created")
-    pending_instance = find_event_by_instance(list_initiell_skjema_created.log_file, party_id, instance_id)
-    
+    pending_instance = find_event_by_instance(tracker.log_file, "21cc45f0-5b99-48c2-b34a-a83970feac6f", "initiell_skjema_instance_created")
+
     instance_meta = regvil_instance_client.get_instance(pending_instance["instancePartyId"], pending_instance["instanceId"])
 
     if not instance_meta:
@@ -45,7 +46,7 @@ def main():
         meta_data = get_meta_data_info(instance_meta_info["data"])
         tags = meta_data["tags"]
 
-        if tags == ["InitiellSkjemaLevert"] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
+        if tags == [config.app_config.tag["tag_instance"]] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
             instance_data = regvil_instance_client.get_instance_data(
                     pending_instance["instancePartyId"],
                     pending_instance["instanceId"],
@@ -71,14 +72,14 @@ def main():
                     pending_instance["instancePartyId"],
                     pending_instance["instanceId"],
                     pending_instance["data_info"]["dataGuid"],
-                    "InitiellSkjemaDownloaded"
+                    config.app_config.tag["tag_download"]
                 )
 
             tracker.logging_instance(
                     pending_instance['org_number'],
                     pending_instance["digitaliseringstiltak_report_id"],
                     instance_meta_info,
-                    "initiell_skjema_instance_downloaded"
+                    config.app_config.tag["tag_download"]
                 )
 
             tracker.save_to_disk()
