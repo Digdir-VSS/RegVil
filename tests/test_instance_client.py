@@ -66,12 +66,6 @@ def test_instance_created_not_found():
 
 def test_instance_created_different_org():
     """Test instance_created returns False when searching different organisation"""
-    test_config_file = {
-        "base_app_url": "https://digdir.apps.tt02.altinn.no",
-        "base_platfrom_url": "https://platform.tt02.altinn.no/storage/api/v1/instances",
-        "application_owner_organisation": "digdir",
-        "appname": "regvil-2025-initiell",
-    }
     test_instance_client = AltinnInstanceClient.init_from_config(config)
     
     # Test with different org number
