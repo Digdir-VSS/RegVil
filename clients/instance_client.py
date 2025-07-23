@@ -239,13 +239,13 @@ class AltinnInstanceClient:
             maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
     
-    def get_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
+        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
 
-    def get_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
+        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
     
@@ -293,8 +293,8 @@ class AltinnInstanceClient:
         }
         return make_api_call(method="PUT", url=url, headers=self._get_headers(), data=json.dumps(payload))
     
-    def tag_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def tag_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
+        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"), data=json.dumps(tag))
     
