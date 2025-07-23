@@ -67,9 +67,7 @@ def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional
         else:
             logging.warning(f"API call failed with status {response.status_code}: {response.text}")
         
-        if response.status_code >= 400:
-            response.raise_for_status()
-        return response
+        return None
             
     except requests.exceptions.ConnectionError:
         logging.error(f"Connection error when calling {url}")
