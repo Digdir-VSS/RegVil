@@ -1,5 +1,10 @@
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+import datetime
+import logging
+import isodate
+
+from .type_dict_structure import DataModel
 
 class PrefillValidationError(Exception):
     pass
@@ -187,3 +192,39 @@ def _is_valid_phone(phone: str) -> bool:
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
     # Norwegian format: +47 followed by 8 digits, or just 8 digits
     return re.match(r'^(\+47)?[0-9]{8}$', cleaned) is not None
+
+
+def parse_iso_date(date_str: Optional[str]) -> Optional[datetime]:
+    if not date_str:
+        return None
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except ValueError:
+        logging.warning(f"Invalid ISO date: {date_str}")
+        return None
+
+
+def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+    initiell = reported_data.get("Initiell")
+    if initiell.get("ErTiltaketPaabegynt"):
+        return initiell.get("DatoPaabegynt")
+    else:
+        if initiell.get("VetOppstartsDato"):
+            return initiell.get("DatoForventetOppstart")
+        else: 
+            return parse_iso_date(datetime.today().strftime("%Y-%m-%d"))
+        
+def get_oppstart_date(reported_data: DataModel, time_delta) -> Optional[str]:
+    oppstart = reported_data.get("Oppstart")
+    expected_end_date = datetime.fromisoformat(oppstart.get("ForventetSluttdato").replace("Z", "+00:00"))
+    parsed_time_delta = isodate.parse_duration(time_delta)
+    result_date = expected_end_date - parsed_time_delta
+    return result_date.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+    oppstart = reported_data.get("Oppstart")
+    status = reported_data.get("Status")    
+    if status.get("ErArbeidAvsluttet"):
+        return datetime.today().strftime("%Y-%m-%d")
+    else:
+        return oppstart.get("ForventetSluttdato")
