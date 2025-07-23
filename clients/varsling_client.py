@@ -18,7 +18,7 @@ def validate_email(email: str) -> str:
 
 class AltinnVarslingClient:
     def __init__(self, base_url: str, maskinport_client_id: str, maskinport_kid: str, maskinport_scope: str, secret_value: str, maskinporten_endpoint: str):
-        self.base_url = base_url.rstrip("/")
+        self.base_url = base_url
         self.secret_value = secret_value
         self.maskinport_client_id = maskinport_client_id
         self.maskinport_kid = maskinport_kid
@@ -29,10 +29,10 @@ class AltinnVarslingClient:
     @classmethod
     def init_from_config(cls, api_config: APIConfig) -> AltinnVarslingClient:
         return cls(
-            base_app_url=api_config.altinn_client.base_app_url.rstrip("/"),
+            base_url=api_config.altinn_client.base_varsling_url,
             maskinport_client_id=api_config.maskinporten_config_instance.client_id,
             maskinport_kid=api_config.maskinporten_config_instance.kid,
-            maskinport_scope=api_config.maskinporten_config_instance.scope,
+            maskinport_scope=api_config.maskinporten_config_varsling.scope,
             secret_value=api_config.secret_value,
             maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
@@ -77,7 +77,7 @@ class AltinnVarslingClient:
                 }
             }
         }
-        response = make_api_call("POST", f"{self.base_url}/future/orders", headers=self._get_headers(), data=json.dumps(payload))
+        response = make_api_call("POST", f"{self.base_url}/future/orders", headers=self._get_headers(content_type="application/json"), data=json.dumps(payload))
         return response
 
     def get_shipment_status(self, shipment_id: str) -> Dict[str, Any]:
