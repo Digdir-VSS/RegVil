@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from dynamic_scripts.get_initiell_skjema import run  # Make sure this matches the filename
 import logging
+from config.config_loader import APPConfig
 
 SAMPLE_PARTY_ID = "50015641"
 SAMPLE_INSTANCE_ID = "a72223a3-926b-4095-a2a6-bacc10815f2d"
@@ -369,3 +370,49 @@ def test_run_skips_if_tag_does_not_match(
     with caplog.at_level(logging.WARNING):
         result = run("500", "abc", "regvil-2025-initiell")
     assert result is None
+
+@pytest.mark.parametrize("app_name, report_data, expected_date_start", [
+    (
+        "regvil-2025-initiell",
+        {"Initiell": {"ErTiltaketPaabegynt": True, "DatoPaabegynt": "2025-07-10T00:00:00Z"}},
+        "2025-07-10T"
+    ),
+    (
+        "regvil-2025-oppstart",
+        {"Oppstart": {"ForventetSluttdato": "2025-01-01T00:00:00Z"}},
+        "2025-07"  # 2025-01-01 + P6M = 2025-07-01 (approx)
+    ),
+        (
+        "regvil-2025-status",
+        {"Status": {"ErArbeidAvsluttet": False}, "Oppstart": {"ForventetSluttdato": "2025-02-01T00:00:00Z"}},
+        "2025-02"
+    )
+])
+def test_appconfig_get_date(app_name, report_data, expected_date_start):
+    config_map = {
+        "regvil-2025-initiell": {
+            "visibleAfter": "2025-07-17T00:00:00Z",
+            "timedelta_visibleAfter": None
+        },
+        "regvil-2025-oppstart": {
+            "visibleAfter": None,
+            "timedelta_visibleAfter": "P6M"
+        },
+        "regvil-2025-status": {
+            "visibleAfter": None,
+            "timedelta_visibleAfter": "P6M"
+        }
+    }
+
+    app_cfg = APPConfig(
+        app_name=app_name,
+        visibleAfter=config_map[app_name]["visibleAfter"],
+        timedelta_visibleAfter=config_map[app_name]["timedelta_visibleAfter"]
+    )
+
+    date = app_cfg.get_date(report_data)
+
+    # Check basic format and value start
+    assert isinstance(date, str)
+    assert date.startswith(expected_date_start)
+    assert "T" in date and date.endswith("Z")
