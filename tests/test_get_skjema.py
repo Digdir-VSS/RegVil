@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from dynamic_scripts.get_initiell_skjema import run  # Make sure this matches the filename
+from get_initiell_skjema import run  # Make sure this matches the filename
 import logging
 from config.config_loader import APPConfig
 
@@ -8,13 +8,13 @@ SAMPLE_PARTY_ID = "50015641"
 SAMPLE_INSTANCE_ID = "a72223a3-926b-4095-a2a6-bacc10815f2d"
 SAMPLE_APP_NAME = "regvil-2025-initiell"
 
-@patch("dynamic_scripts.get_initiell_skjema.find_event_by_instance")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.SecretClient")
-@patch("dynamic_scripts.get_initiell_skjema.DefaultAzureCredential")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.SecretClient")
+@patch("get_initiell_skjema.DefaultAzureCredential")
+@patch("get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.load_full_config")
 def test_run_success(
     mock_load_config,
     mock_load_dotenv,
@@ -71,11 +71,11 @@ def test_run_success(
     result = run(SAMPLE_PARTY_ID, SAMPLE_INSTANCE_ID, SAMPLE_APP_NAME)
     assert isinstance(result, dict)
 
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.get_meta_data_info")
+@patch("get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.get_meta_data_info")
 def test_run_raises_value_error_on_invalid_metadata(
     mock_get_meta_data_info,
     mock_instance_tracker,
@@ -105,11 +105,11 @@ def test_run_raises_value_error_on_invalid_metadata(
         run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
 
 #Test: Already tagged (skip download)
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.get_meta_data_info")
+@patch("get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.get_meta_data_info")
 def test_run_skips_when_already_tagged(
     mock_get_meta_data_info,
     mock_instance_tracker,
@@ -158,12 +158,12 @@ def test_run_skips_when_already_tagged(
     assert result is None  # run logs and skips when already tagged
 
 #Test: Successful full run
-@patch("dynamic_scripts.get_initiell_skjema.write_to_json")
-@patch("dynamic_scripts.get_initiell_skjema.get_meta_data_info")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.write_to_json")
+@patch("get_initiell_skjema.get_meta_data_info")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.load_dotenv")
 def test_run_success_full_flow(
     mock_load_dotenv,
     mock_load_config,
@@ -221,13 +221,13 @@ def test_run_success_full_flow(
     print(result)
     assert isinstance(result, dict)
 
-@patch("dynamic_scripts.get_initiell_skjema.find_event_by_instance")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.SecretClient")
-@patch("dynamic_scripts.get_initiell_skjema.DefaultAzureCredential")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.SecretClient")
+@patch("get_initiell_skjema.DefaultAzureCredential")
+@patch("get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.load_full_config")
 def test_run_logs_exception_when_instance_data_fails(
     mock_load_config,
     mock_load_dotenv,
@@ -287,11 +287,11 @@ def test_run_logs_exception_when_instance_data_fails(
         for message in caplog.text.splitlines()
     )
 
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.find_event_by_instance")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.load_dotenv")
 def test_run_returns_none_if_get_instance_fails(
     mock_dotenv, mock_config, mock_find_event, mock_tracker, mock_client_class, caplog
 ):
@@ -304,12 +304,12 @@ def test_run_returns_none_if_get_instance_fails(
         result = run("500", "abc", "regvil-2025-initiell")
     assert result is None
 
-@patch("dynamic_scripts.get_initiell_skjema.get_meta_data_info")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.find_event_by_instance")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.get_meta_data_info")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.load_dotenv")
 def test_run_returns_none_if_get_instance_data_fails(
     mock_dotenv, mock_config, mock_find_event, mock_tracker,
     mock_client_class, mock_get_meta, caplog
@@ -337,12 +337,12 @@ def test_run_returns_none_if_get_instance_data_fails(
     result = run("500", "abc", "regvil-2025-initiell")
     assert result is None
 
-@patch("dynamic_scripts.get_initiell_skjema.get_meta_data_info")
-@patch("dynamic_scripts.get_initiell_skjema.AltinnInstanceClient")
-@patch("dynamic_scripts.get_initiell_skjema.InstanceTracker")
-@patch("dynamic_scripts.get_initiell_skjema.find_event_by_instance")
-@patch("dynamic_scripts.get_initiell_skjema.load_full_config")
-@patch("dynamic_scripts.get_initiell_skjema.load_dotenv")
+@patch("get_initiell_skjema.get_meta_data_info")
+@patch("get_initiell_skjema.AltinnInstanceClient")
+@patch("get_initiell_skjema.InstanceTracker")
+@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.load_full_config")
+@patch("get_initiell_skjema.load_dotenv")
 def test_run_skips_if_tag_does_not_match(
     mock_dotenv, mock_config, mock_find_event, mock_tracker,
     mock_client_class, mock_get_meta, caplog
