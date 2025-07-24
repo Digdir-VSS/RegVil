@@ -1,5 +1,11 @@
 import re
 from typing import Any, Dict
+import logging
+from azure.storage.blob import BlobServiceClient
+from azure.identity import DefaultAzureCredential, EnvironmentCredential
+from dotenv import load_dotenv
+import os
+import json
 
 class PrefillValidationError(Exception):
     pass
@@ -187,3 +193,71 @@ def _is_valid_phone(phone: str) -> bool:
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
     # Norwegian format: +47 followed by 8 digits, or just 8 digits
     return re.match(r'^(\+47)?[0-9]{8}$', cleaned) is not None
+
+def connect_blob():
+    try:
+        load_dotenv()
+
+        if os.getenv("AZURE_CLIENT_ID"):
+            # print("Using EnvironmentCredential for local dev")
+            credential = EnvironmentCredential()
+        else:
+            # print("Using DefaultAzureCredential (includes managed identity in Azure)")
+            credential = DefaultAzureCredential()
+
+        blob_service_client = BlobServiceClient(os.getenv('BLOB_STORAGE_ACCOUNT_URL'), credential=credential)
+        container_client = blob_service_client.get_container_client("regvil-blob-container")
+        
+        return container_client
+
+    except Exception as e:
+        logging.error(f"Error connecting to Azure Blob Storage: {e}")
+        return None
+    
+def blob_exists(file: str) -> bool:
+    container_client = connect_blob()
+    if not container_client:
+        return False
+    try:
+        blob_client = container_client.get_blob_client(file)
+        return blob_client.exists()
+    except Exception as e:
+        logging.error(f"Error checking existence of blob {file}: {e}")
+        return False
+    
+def read_blob(file):
+    container_client = connect_blob()
+    if not container_client:
+        return None
+    try:
+        blob_client = container_client.get_blob_client(file)
+        blob_data = blob_client.download_blob().readall()
+        return json.loads(blob_data)
+    except Exception as e:
+        logging.error(f"Error reading blob {file}: {e}")
+        return None
+    
+def write_blob(file: str, data: Dict[str, str]) -> bool:
+    container_client = connect_blob()
+    if not container_client:
+        return False    
+    try:
+        blob_client = container_client.get_blob_client(file)
+        blob_client.upload_blob(json.dumps(data), overwrite=True)
+        return True
+    except Exception as e:
+        logging.error(f"Error writing blob {file}: {e}")
+        return False
+    
+def blob_directory_exists(directory: str) -> bool:
+    container_client = connect_blob()
+    if not container_client:
+        return False
+    if not directory.endswith('/'):
+        directory += '/'
+    try:
+        blobs = container_client.list_blobs(name_starts_with=directory)
+        return any(blob.name.startswith(directory) for blob in blobs)
+    except Exception as e:
+        logging.error(f"Error checking existence of directory {directory}: {e}")
+        return False

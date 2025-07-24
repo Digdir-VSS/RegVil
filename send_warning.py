@@ -33,7 +33,7 @@ def main() -> None:
     varsling_client = AltinnVarslingClient.init_from_config(config)
     recipient_email = "matthias.boeker@digdir.no"
     response = varsling_client.send_notification(
-        recipient_email="matthias.boeker@digdir.no",
+        recipient_email="ignacio.cuervo.torre@digdir.no",
         subject="Test Varsling Email",
         body="Hello, this is a test varsling from our integration."
     )
@@ -42,7 +42,7 @@ def main() -> None:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
         status = varsling_client.get_shipment_status(shipment_id)
-        tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / os.getenv("ENV")/ "instance_log" / "instance_log.json")
+        tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
         tracker.logging_varlsing(org_number="311045407", org_name="TestVirksomhet", digitaliseringstiltak_report_id="abc-def-ghi-jkl-mno-pqr", shipment_id=status.json(), recipientEmail=recipient_email, event_type="Varsling1Send")
         tracker.save_to_disk()
 
