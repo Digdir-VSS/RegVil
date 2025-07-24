@@ -1,6 +1,6 @@
 import re
 from typing import Any, Dict, Optional
-import datetime
+from datetime import datetime, timezone
 import logging
 import isodate
 
@@ -194,15 +194,23 @@ def _is_valid_phone(phone: str) -> bool:
     return re.match(r'^(\+47)?[0-9]{8}$', cleaned) is not None
 
 
-def parse_iso_date(date_str: Optional[str]) -> Optional[datetime]:
-    if not date_str:
-        return None
-    try:
-        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-    except ValueError:
-        logging.warning(f"Invalid ISO date: {date_str}")
-        return None
+def get_today_date():
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
+def check_date_before(reference_date: str, compare_date: str):
+    if not reference_date:
+        raise ValueError("Reference date string is empty")
+    if not compare_date:
+        raise ValueError("Comapre date string is empty")
+    return datetime.fromisoformat(reference_date) < datetime.fromisoformat(compare_date)
+
+def add_time_delta(base_date_str: str, time_delta_str: str):
+    if not time_delta_str:
+        raise ValueError("Timedelta string is empty")
+    base_date = datetime.fromisoformat(base_date_str)
+    time_delta = isodate.parse_duration(time_delta_str)
+    result = base_date + time_delta
+    return result.isoformat().replace("+00:00", "Z")
 
 def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
     initiell = reported_data.get("Initiell")
@@ -212,19 +220,20 @@ def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Op
         if initiell.get("VetOppstartsDato"):
             return initiell.get("DatoForventetOppstart")
         else: 
-            return parse_iso_date(datetime.today().strftime("%Y-%m-%d"))
+            return get_today_date()
         
-def get_oppstart_date(reported_data: DataModel, time_delta) -> Optional[str]:
+def get_oppstart_date(reported_data: DataModel, time_delta: str) -> str:
     oppstart = reported_data.get("Oppstart")
-    expected_end_date = datetime.fromisoformat(oppstart.get("ForventetSluttdato").replace("Z", "+00:00"))
-    parsed_time_delta = isodate.parse_duration(time_delta)
-    result_date = expected_end_date - parsed_time_delta
-    return result_date.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    result_date = add_time_delta(oppstart.get("ForventetSluttdato"), time_delta)
+    if check_date_before(result_date, get_today_date()):
+        return get_today_date()
+    return result_date
 
 def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
     oppstart = reported_data.get("Oppstart")
     status = reported_data.get("Status")    
     if status.get("ErArbeidAvsluttet"):
-        return datetime.today().strftime("%Y-%m-%d")
+        return get_today_date()
     else:
         return oppstart.get("ForventetSluttdato")
+
