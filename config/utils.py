@@ -1,5 +1,10 @@
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+from datetime import datetime, timezone
+import logging
+import isodate
+
+from .type_dict_structure import DataModel
 
 class PrefillValidationError(Exception):
     pass
@@ -187,3 +192,51 @@ def _is_valid_phone(phone: str) -> bool:
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
     # Norwegian format: +47 followed by 8 digits, or just 8 digits
     return re.match(r'^(\+47)?[0-9]{8}$', cleaned) is not None
+
+
+def get_today_date():
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+def check_date_before(reference_date: str, compare_date: str):
+    if not reference_date:
+        raise ValueError("Reference date string is empty")
+    if not compare_date:
+        raise ValueError("Comapre date string is empty")
+    return datetime.fromisoformat(reference_date) < datetime.fromisoformat(compare_date)
+
+def add_time_delta(base_date_str: str, time_delta_str: str):
+    if not time_delta_str:
+        raise ValueError("Timedelta string is empty")
+    base_date = datetime.fromisoformat(base_date_str)
+    time_delta = isodate.parse_duration(time_delta_str)
+    result = base_date + time_delta
+    return result.isoformat().replace("+00:00", "Z")
+
+def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+    initiell = reported_data.get("Initiell")
+    if initiell.get("ErTiltaketPaabegynt"):
+        initell_date = add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
+        if check_date_before(initell_date, get_today_date()):
+            return add_time_delta(get_today_date(), time_delta)
+        return add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
+    else:
+        if initiell.get("VetOppstartsDato"):
+            return add_time_delta(initiell.get("DatoForventetOppstart"), time_delta)
+        else: 
+            return add_time_delta(get_today_date(), time_delta)
+        
+def get_oppstart_date(reported_data: DataModel, time_delta: str) -> str:
+    oppstart = reported_data.get("Oppstart")
+    result_date = add_time_delta(oppstart.get("ForventetSluttdato"), time_delta)
+    if check_date_before(result_date, get_today_date()):
+        return get_today_date()
+    return result_date
+
+def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+    oppstart = reported_data.get("Oppstart")
+    status = reported_data.get("Status")    
+    if status.get("ErArbeidAvsluttet"):
+        return get_today_date()
+    else:
+        return oppstart.get("ForventetSluttdato")
+
