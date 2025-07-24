@@ -1,10 +1,7 @@
 from flask import Flask, request
-import subprocess
 import logging
-from pathlib import Path
 
-from dynamic_scripts.get_initiell_skjema import run as download_skjema
-from upload_skjema import run as upload_skjema
+from get_initiell_skjema import run as download_skjema
 
 app = Flask(__name__)
 
@@ -26,7 +23,7 @@ def handle_event():
         )
         download_params = download_skjema(party_id=party_id, instance_id=instance_id, app_name=app_name)
         if not download_params:
-            logging.error(f"Download failed or skipped for instance {instance_id}. Skipping upload.")
+            logging.error(f"Download failed or skipped for instance {instance_id}. Skipping download.")
             return {
                 "status": "failed",
                 "reason": "download_skjema returned None",
