@@ -64,7 +64,7 @@ class APPConfig:
         get_date_fun = GET_DATES.get(self.app_name)
         if not get_date_fun:
             raise ValueError(f"No get date func defined for app: {self.app_name}")
-        return get_date_fun(report_data)
+        return get_date_fun(report_data, self.timedelta_visibleAfter)
     
     def get_prefill_data(self, data) -> dict:
         transformer = PREFILL_TRANSFORMERS.get(self.app_name)
