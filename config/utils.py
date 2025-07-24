@@ -215,12 +215,15 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
 def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
     initiell = reported_data.get("Initiell")
     if initiell.get("ErTiltaketPaabegynt"):
-        return initiell.get("DatoPaabegynt")
+        initell_date = add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
+        if check_date_before(initell_date, get_today_date()):
+            return add_time_delta(get_today_date(), time_delta)
+        return add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
     else:
         if initiell.get("VetOppstartsDato"):
-            return initiell.get("DatoForventetOppstart")
+            return add_time_delta(initiell.get("DatoForventetOppstart"), time_delta)
         else: 
-            return get_today_date()
+            return add_time_delta(get_today_date(), time_delta)
         
 def get_oppstart_date(reported_data: DataModel, time_delta: str) -> str:
     oppstart = reported_data.get("Oppstart")

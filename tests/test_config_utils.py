@@ -62,14 +62,15 @@ def test_check_date_before():
     with pytest.raises(ValueError, match="Comapre date string is empty"):
         result = check_date_before(ref_date_str, compare_date_str)
 
-def test_get_initiell_date_paabegynt():
+def test_get_initiell_date_paabegynt(monkeypatch):
     reported_data = {
         "Initiell": {
             "ErTiltaketPaabegynt": True,
             "DatoPaabegynt": "2025-07-01T00:00:00Z"
         }
     }
-    assert get_initiell_date(reported_data, None) == "2025-07-01T00:00:00Z"
+    monkeypatch.setattr("config.utils.get_today_date", lambda: "2024-07-24T00:00:00Z")
+    assert get_initiell_date(reported_data, "P3M") == "2025-10-01T00:00:00Z"
 
 def test_get_initiell_date_forventet_oppstart():
     reported_data = {
@@ -79,7 +80,7 @@ def test_get_initiell_date_forventet_oppstart():
             "DatoForventetOppstart": "2025-08-01T00:00:00Z"
         }
     }
-    assert get_initiell_date(reported_data, None) == "2025-08-01T00:00:00Z"
+    assert get_initiell_date(reported_data, "P3M") == "2025-11-01T00:00:00Z"
 
 def test_get_initiell_date_fallback_to_today(monkeypatch):
     reported_data = {
@@ -89,7 +90,7 @@ def test_get_initiell_date_fallback_to_today(monkeypatch):
         }
     }
     monkeypatch.setattr("config.utils.get_today_date", lambda: "2025-07-24T12:00:00Z")
-    assert get_initiell_date(reported_data, None) == "2025-07-24T12:00:00Z"
+    assert get_initiell_date(reported_data, "P3M") == "2025-10-24T12:00:00Z"
     
 
 def test_get_status_date_finished(monkeypatch):
@@ -130,8 +131,8 @@ def test_get_oppstart_date_negative_delta_still_future(monkeypatch):
     }
 
     monkeypatch.setattr("config.utils.get_today_date", lambda: "2025-07-24T00:00:00Z")
-    monkeypatch.setattr("config.utils.add_time_delta", lambda d, td: "2025-07-27T00:00:00Z")  # still in future
-    monkeypatch.setattr("config.utils.check_date_before", lambda d1, d2: False)
+    monkeypatch.setattr("config.utils.add_time_delta", lambda d, td: "2024-07-27T00:00:00Z")  # still in future
+    monkeypatch.setattr("config.utils.check_date_before", lambda d1, d2: True)
 
-    result = get_oppstart_date(reported_data, "-P14D")
-    assert result == "2025-07-27T00:00:00Z"
+    result = get_oppstart_date(reported_data, None)
+    assert result == "2025-07-24T00:00:00Z"
