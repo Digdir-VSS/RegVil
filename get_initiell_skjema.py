@@ -66,7 +66,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     "data": report_data
                 }
             filename = f"initiellskjema_{instance_meta_info['instanceOwner']['organisationNumber']}_{pending_instance['digitaliseringstiltak_report_id']}_{party_id}_{instance_id}.json"
-            print(filename)
             write_to_json(data_to_storage, path_to_initiell_skjema_storage, filename) #change to azure data blob function
 
             response = regvil_instance_client.tag_instance_data(
