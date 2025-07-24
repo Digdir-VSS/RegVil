@@ -13,8 +13,7 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
-def is_valid_instance(meta_info: dict, tag_expected: str) -> bool:
-    meta_data = get_meta_data_info(meta_info["data"])
+def is_valid_instance(meta_data: dict, tag_expected: str) -> bool:
     return (
         meta_data.get("tags") == [tag_expected] and
         meta_data.get("createdBy") != meta_data.get("lastChangedBy")
@@ -47,9 +46,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     try:
         instance_meta_info = instance_meta.json()
         meta_data = get_meta_data_info(instance_meta_info["data"])
-        tags = meta_data.get("tags")
-        created_by = meta_data.get("createdBy")
-        last_changed_by = meta_data.get("lastChangedBy")
 
         if is_valid_instance(meta_data, config.app_config.tag["tag_instance"]):
             instance_data = regvil_instance_client.get_instance_data(
@@ -57,9 +53,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     instance_id,
                     meta_data["id"]
                 )
-            if not instance_data:
-                logging.error(f"Failed to fetch instance data for Party Id: {party_id} Instance id: {instance_id} and DataGuid: {meta_data['id']}")
-                return None
             
             report_data = instance_data.json()
             data_to_storage = {
