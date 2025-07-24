@@ -13,17 +13,16 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
+def is_valid_instance(meta_info: dict, tag_expected: str) -> bool:
+    meta_data = get_meta_data_info(meta_info["data"])
+    return (
+        meta_data.get("tags") == [tag_expected] and
+        meta_data.get("createdBy") != meta_data.get("lastChangedBy")
+    )
+
 def write_to_json(data: Dict[str, Any], path_to_folder: Path, filename: str) -> None:
     with open(path_to_folder / filename, 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
-
-def fetch_instance_metadata(party_id, instance_id, config):
-    client = AltinnInstanceClient.init_from_config(config)
-    response = client.get_instance(party_id, instance_id)
-    if not response:
-        logging.error(f"Failed to fetch instance: {response.status_code if response else 'No response'}")
-        return None
-    return response.json()
 
 credential = DefaultAzureCredential()
 client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential)
@@ -48,11 +47,11 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     try:
         instance_meta_info = instance_meta.json()
         meta_data = get_meta_data_info(instance_meta_info["data"])
-        tags = meta_data.get("tags", [])
+        tags = meta_data.get("tags")
         created_by = meta_data.get("createdBy")
         last_changed_by = meta_data.get("lastChangedBy")
 
-        if tags == [config.app_config.tag["tag_instance"]] and created_by == last_changed_by:
+        if is_valid_instance(meta_data, config.app_config.tag["tag_instance"]):
             instance_data = regvil_instance_client.get_instance_data(
                     party_id,
                     instance_id,
