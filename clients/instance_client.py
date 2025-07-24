@@ -240,12 +240,10 @@ class AltinnInstanceClient:
         )
     
     def get_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
 
     def get_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
     
@@ -279,13 +277,11 @@ class AltinnInstanceClient:
                 return True
         return False
     
-    def complete_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def complete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/complete"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"))
     
-    def update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def update_substatus(self, instanceOwnerPartyId: str, instance_id: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/substatus"
         payload = {
             "label": "skjema_instance_created",
@@ -294,7 +290,6 @@ class AltinnInstanceClient:
         return make_api_call(method="PUT", url=url, headers=self._get_headers(), data=json.dumps(payload))
     
     def tag_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        #instance_id = instanceGuid.split("/")[1]
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"), data=json.dumps(tag))
     
