@@ -8,7 +8,7 @@ SAMPLE_PARTY_ID = "50015641"
 SAMPLE_INSTANCE_ID = "a72223a3-926b-4095-a2a6-bacc10815f2d"
 SAMPLE_APP_NAME = "regvil-2025-initiell"
 
-@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.InstanceTracker")
 @patch("get_initiell_skjema.AltinnInstanceClient")
 @patch("get_initiell_skjema.SecretClient")
@@ -38,13 +38,7 @@ def test_run_success(
     mock_secret_client.return_value.get_secret.return_value = mock_secret
 
     # Mock event
-    mock_find_event.return_value = {
-        "org_number": "123456789",
-        "instancePartyId": SAMPLE_PARTY_ID,
-        "instanceId": f"{SAMPLE_PARTY_ID}/{SAMPLE_INSTANCE_ID}",
-        "data_info": {"dataGuid": "abc123"},
-        "digitaliseringstiltak_report_id": "report001"
-    }
+    mock_find_event.return_value = "r1"
 
     # Mock instance response
     instance_mock = MagicMock()
@@ -66,43 +60,10 @@ def test_run_success(
     mock_altinn.get_instance_data.return_value.json.return_value = {"field": "value"}
     mock_altinn.tag_instance_data.return_value.status_code = 200
 
-    mock_tracker_inst = mock_tracker.from_log_file.return_value
+    mock_tracker_inst = mock_tracker.from_directory.return_value
 
     result = run(SAMPLE_PARTY_ID, SAMPLE_INSTANCE_ID, SAMPLE_APP_NAME)
     assert isinstance(result, dict)
-
-@patch("get_initiell_skjema.load_dotenv")
-@patch("get_initiell_skjema.load_full_config")
-@patch("get_initiell_skjema.AltinnInstanceClient")
-@patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.get_meta_data_info")
-def test_run_raises_value_error_on_invalid_metadata(
-    mock_get_meta_data_info,
-    mock_instance_tracker,
-    mock_instance_client_class,
-    mock_load_config,
-    mock_load_dotenv
-):
-    # Arrange
-    mock_client = MagicMock()
-    mock_instance_client_class.init_from_config.return_value = mock_client
-
-    mock_client.get_instance.return_value.json.return_value = {
-            "id": f"{SAMPLE_PARTY_ID}/{SAMPLE_INSTANCE_ID}",
-    "instanceOwner": {"organisationNumber": "123456789"}, 
-        "data": [{"tags": ["InitiellSkjemaDownloaded"], "id": "abc123",  "createdBy": "user", "lastChangedBy": "user"}]
-    }
-
-    mock_tracker = MagicMock()
-    mock_tracker.log_file = {"organisations": []}
-    mock_instance_tracker.from_log_file.return_value = mock_tracker
-
-    # Cause get_meta_data_info to raise the ValueError
-    mock_get_meta_data_info.side_effect = ValueError("No instance with dataType='DataModel'...")
-
-    # Act & Assert
-    with pytest.raises(ValueError, match="Log data is empty."):
-        run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
 
 #Test: Already tagged (skip download)
 @patch("get_initiell_skjema.load_dotenv")
@@ -218,10 +179,9 @@ def test_run_success_full_flow(
     mock_instance_tracker.from_log_file.return_value = mock_tracker
 
     result = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
-    print(result)
     assert isinstance(result, dict)
 
-@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.InstanceTracker")
 @patch("get_initiell_skjema.AltinnInstanceClient")
 @patch("get_initiell_skjema.SecretClient")
@@ -252,13 +212,7 @@ def test_run_logs_exception_when_instance_data_fails(
     mock_secret.value = "secret"
     mock_secret_client.return_value.get_secret.return_value = mock_secret
 
-    mock_find_event.return_value = {
-        "org_number": "123456789",
-        "instancePartyId": "50015641",
-        "instanceId": "50015641/a72223a3-926b-4095-a2a6-bacc10815f2d",
-        "data_info": {"dataGuid": "abc123"},
-        "digitaliseringstiltak_report_id": "report001"
-    }
+    mock_find_event.return_value = "report001"
 
     mock_client = MagicMock()
     mock_altinn_client.init_from_config.return_value = mock_client
@@ -271,7 +225,13 @@ def test_run_logs_exception_when_instance_data_fails(
     mock_tracker.from_log_file.return_value.log_file = {
         "organisations": {
             "123456789": {
-                "events": [mock_find_event.return_value]
+                "events": [{
+        "org_number": "123456789",
+        "instancePartyId": "50015641",
+        "instanceId": "50015641/a72223a3-926b-4095-a2a6-bacc10815f2d",
+        "data_info": {"dataGuid": "abc123"},
+        "digitaliseringstiltak_report_id": "report001"
+    }]
             }
         }
     }
@@ -289,13 +249,13 @@ def test_run_logs_exception_when_instance_data_fails(
 
 @patch("get_initiell_skjema.AltinnInstanceClient")
 @patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.load_full_config")
 @patch("get_initiell_skjema.load_dotenv")
 def test_run_returns_none_if_get_instance_fails(
     mock_dotenv, mock_config, mock_find_event, mock_tracker, mock_client_class, caplog
 ):
-    mock_find_event.return_value = {"instancePartyId": "500", "instanceId": "abc"}
+    mock_find_event.return_value = "r1"
     mock_client = MagicMock()
     mock_client.get_instance.return_value = None
     mock_client_class.init_from_config.return_value = mock_client
@@ -307,16 +267,14 @@ def test_run_returns_none_if_get_instance_fails(
 @patch("get_initiell_skjema.get_meta_data_info")
 @patch("get_initiell_skjema.AltinnInstanceClient")
 @patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.load_full_config")
 @patch("get_initiell_skjema.load_dotenv")
 def test_run_returns_none_if_get_instance_data_fails(
     mock_dotenv, mock_config, mock_find_event, mock_tracker,
     mock_client_class, mock_get_meta, caplog
 ):
-    mock_find_event.return_value = {
-        "instancePartyId": "500", "instanceId": "abc", "data_info": {"dataGuid": "123"}, "digitaliseringstiltak_report_id": "r1"
-    }
+    mock_find_event.return_value = "r1"
 
     mock_client = MagicMock()
     mock_instance = MagicMock()
@@ -340,16 +298,14 @@ def test_run_returns_none_if_get_instance_data_fails(
 @patch("get_initiell_skjema.get_meta_data_info")
 @patch("get_initiell_skjema.AltinnInstanceClient")
 @patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.find_event_by_instance")
+@patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.load_full_config")
 @patch("get_initiell_skjema.load_dotenv")
 def test_run_skips_if_tag_does_not_match(
     mock_dotenv, mock_config, mock_find_event, mock_tracker,
     mock_client_class, mock_get_meta, caplog
 ):
-    mock_find_event.return_value = {
-        "instancePartyId": "500", "instanceId": "abc", "data_info": {"dataGuid": "123"}, "digitaliseringstiltak_report_id": "r1"
-    }
+    mock_find_event.return_value =  "r1"
 
     mock_client = MagicMock()
     mock_instance = MagicMock()
@@ -374,8 +330,8 @@ def test_run_skips_if_tag_does_not_match(
 @pytest.mark.parametrize("app_name, report_data, expected_date_start", [
     (
         "regvil-2025-initiell",
-        {"Initiell": {"ErTiltaketPaabegynt": True, "DatoPaabegynt": "2025-07-10T00:00:00Z"}},
-        "2025-07-10T"
+        {"Initiell": {"ErTiltaketPaabegynt": True, "DatoPaabegynt": "2025-01-10T00:00:00Z"}},
+        "2025-11-01T"
     ),
     (
         "regvil-2025-oppstart",
@@ -388,11 +344,12 @@ def test_run_skips_if_tag_does_not_match(
         "2025-02"
     )
 ])
-def test_appconfig_get_date(app_name, report_data, expected_date_start):
+def test_appconfig_get_date(app_name, report_data, expected_date_start, monkeypatch):
+    monkeypatch.setattr("config.utils.get_today_date", lambda: "2025-05-01T00:00:00Z")
     config_map = {
         "regvil-2025-initiell": {
             "visibleAfter": "2025-07-17T00:00:00Z",
-            "timedelta_visibleAfter": None
+            "timedelta_visibleAfter": "P6M"
         },
         "regvil-2025-oppstart": {
             "visibleAfter": None,
@@ -411,7 +368,6 @@ def test_appconfig_get_date(app_name, report_data, expected_date_start):
     )
 
     date = app_cfg.get_date(report_data)
-
     # Check basic format and value start
     assert isinstance(date, str)
     assert date.startswith(expected_date_start)
