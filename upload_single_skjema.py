@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, Tuple
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 from pathlib import Path
@@ -10,7 +10,7 @@ import os
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.type_dict_structure import DataModel
-from config.config_loader import load_full_config
+from config.config_loader import load_full_config, APIConfig
 
 load_dotenv()
 
@@ -21,6 +21,30 @@ client = SecretClient(
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
+def create_payload(org_number: str, dato: str, app_config: APIConfig, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
+    instance_data = {
+            "appId": f"digdir/{app_config.app_config.app_name}",
+            "instanceOwner": {
+                "personNumber": None,
+                "organisationNumber": org_number,
+            },
+            "dueBefore": dato,
+            "visibleAfter": None,
+        }
+    files = {
+            "instance": (
+                "instance.json",
+                json.dumps(instance_data, ensure_ascii=False),
+                "application/json",
+            ),
+            "DataModel": (
+                "datamodel.json",
+                json.dumps(prefill_data, ensure_ascii=False),
+                "application/json",
+            ),
+        }
+    return files 
+     
 
 def load_in_json(path_to_json_file: Path) -> Any:
     with open(path_to_json_file, "r", encoding="utf-8") as file:
@@ -28,7 +52,7 @@ def load_in_json(path_to_json_file: Path) -> Any:
 
 
 def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> None:
-    
+
     logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
     app_config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
@@ -46,36 +70,20 @@ def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data:
     if regvil_instance_client.instance_created(
         org_number, app_config.app_config.tag["tag_instance"]
         ):
-        logging.info(
+        logging.warning(
                 f"Skipping org {org_number} and report {report_id}- already in storage"
             )
-
+        return {
+        "status": 200,
+        "report_id":report_id,
+        "org_number": org_number,
+        "app_name": app_config,
+    }
     logging.info(
             f"Creating new instance for org {org_number} and report id {report_id}"
         )
-    instance_data = {
-            "appId": f"digdir/{app_config.app_config.app_name}",
-            "instanceOwner": {
-                "personNumber": None,
-                "organisationNumber": org_number,
-            },
-            "dueBefore": dato,
-            "visibleAfter": None,
-        }
-
-    files = {
-            "instance": (
-                "instance.json",
-                json.dumps(instance_data, ensure_ascii=False),
-                "application/json",
-            ),
-            "DataModel": (
-                "datamodel.json",
-                json.dumps(prefill_data, ensure_ascii=False),
-                "application/json",
-            ),
-        }
-
+    
+    files = create_payload(org_number, dato, app_config, prefill_data)
     created_instance = regvil_instance_client.post_new_instance(files)
 
     if created_instance.status_code == 201:
@@ -104,7 +112,15 @@ def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data:
                 logging.info(f"Successfully tagged instance for org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
         else:
                 logging.warning(f"Failed to tag instance org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
-
+        
+        return {
+        "status": 200,
+        "instance_id": instance_meta_data["id"],
+        "party_id": instance_meta_data["instanceOwner"]["partyId"],
+        "report_id":report_id,
+        "org_number": org_number,
+        "app_name": app_config,
+    }
     else:
         logging.warning(
                 f"Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}"
@@ -122,3 +138,11 @@ def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data:
                     f"Status: {created_instance.status_code} - "
                     f"Error message: {error_msg}"
                 )
+        return {
+        "status": 500,
+        "instance_id": instance_meta_data["id"],
+        "party_id": instance_meta_data["instanceOwner"]["partyId"],
+        "report_id":report_id,
+        "org_number": org_number,
+        "app_name": app_config,
+    }
