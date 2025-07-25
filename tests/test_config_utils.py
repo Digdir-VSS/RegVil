@@ -1,5 +1,7 @@
 import pytest
-
+import os
+from pathlib import Path
+from config.config_loader import load_full_config
 from config.utils import add_time_delta, check_date_before, get_initiell_date, get_oppstart_date, get_status_date
 
 def test_add_time_delta():
@@ -136,3 +138,90 @@ def test_get_oppstart_date_negative_delta_still_future(monkeypatch):
 
     result = get_oppstart_date(reported_data, None)
     assert result == "2025-07-24T00:00:00Z"
+
+
+def test_load_full_config(monkeypatch):
+    # Arrange
+    monkeypatch.setenv("ENV", "test")  # if your test ENV folder is `config_files/test/`
+    app_name = "regvil-2025-oppstart"  # update as needed
+    config_path = Path(__file__).parent.parent / "config_files"
+
+    # Act
+    oppstart_config = load_full_config(config_path, app_name, os.getenv("ENV"))
+
+    # Assert
+    assert oppstart_config is not None
+
+    # App-level checks
+    assert hasattr(oppstart_config, "app_config")
+    assert oppstart_config.app_config.app_name == app_name
+    assert "tag_instance" in oppstart_config.app_config.tag
+    assert "tag_download" in oppstart_config.app_config.tag
+    assert oppstart_config.app_config.tag["tag_instance"] == "OppstartSkjemaLevert"
+    assert oppstart_config.app_config.tag["tag_download"] == "OppstartSkjemaDownloaded"
+
+    # Maskinporten client config
+    assert hasattr(oppstart_config, "maskinporten_config_instance")
+    assert isinstance(oppstart_config.maskinporten_config_instance.client_id, str)
+    assert isinstance(oppstart_config.maskinporten_config_instance.kid, str)
+
+    # DAG check
+    assert hasattr(oppstart_config, "workflow_dag")
+    assert oppstart_config.workflow_dag.get_next(app_name) == "regvil-2025-status" 
+
+    # Optional date delta logic
+    assert hasattr(oppstart_config.app_config, "timedelta_visibleAfter")
+    assert oppstart_config.app_config.timedelta_visibleAfter == "P6M"
+    assert oppstart_config.app_config.visibleAfter == None
+
+    app_name = "regvil-2025-initiell"  # update as needed
+    # Act
+    initiell_config = load_full_config(config_path, app_name, os.getenv("ENV"))
+        # App-level checks
+    assert initiell_config.app_config.tag["tag_instance"] == "InitiellSkjemaLevert"
+    assert initiell_config.app_config.tag["tag_download"] == "InitiellSkjemaDownloaded"
+
+    # DAG check
+    assert initiell_config.workflow_dag.get_next(app_name) == "regvil-2025-oppstart" 
+
+    # date delta logic
+    assert hasattr(initiell_config.app_config, "timedelta_visibleAfter")
+    assert initiell_config.app_config.timedelta_visibleAfter == None
+    assert initiell_config.app_config.timedelta_dueBefore == None
+    assert initiell_config.app_config.visibleAfter == "2025-07-17T00:00:00Z"
+    assert initiell_config.app_config.dueBefore == "2025-09-01T12:00:00Z"
+
+    app_name = "regvil-2025-status"  # update as needed
+    # Act
+    status_config = load_full_config(config_path, app_name, os.getenv("ENV"))
+        # App-level checks
+    assert status_config.app_config.tag["tag_instance"] == "StatusSkjemaLevert"
+    assert status_config.app_config.tag["tag_download"] == "StatusSkjemaDownloaded"
+
+    # DAG check
+    assert status_config.workflow_dag.get_next(app_name) == "regvil-2025-slutt" 
+
+    # date delta logic
+    assert hasattr(status_config.app_config, "timedelta_visibleAfter")
+    assert status_config.app_config.timedelta_visibleAfter == "P6M"
+    assert status_config.app_config.visibleAfter == None
+    assert status_config.app_config.visibleAfter == None
+
+
+    app_name = "regvil-2025-slutt"  # update as needed
+    # Act
+    slutt_config = load_full_config(config_path, app_name, os.getenv("ENV"))
+
+        # App-level checks
+    assert slutt_config.app_config.tag["tag_instance"] == "SluttSkjemaLevert"
+    assert slutt_config.app_config.tag["tag_download"] == "SluttSkjemaDownloaded"
+
+    # DAG check
+    assert status_config.workflow_dag.get_next(app_name) == None
+
+    # date delta logic
+    assert hasattr(slutt_config.app_config, "timedelta_visibleAfter")
+    assert slutt_config.app_config.timedelta_visibleAfter == None
+    assert slutt_config.app_config.visibleAfter == None
+    assert slutt_config.app_config.visibleAfter == None
+
