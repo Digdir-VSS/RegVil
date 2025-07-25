@@ -49,18 +49,13 @@ def main() -> None:
 
         logging.info(f"Processing org {org_number}, report {report_id}")
 
-        # if tracker.has_processed_instance(org_number, report_id):
-        #     logging.info(
-        #         f"Skipping org {org_number} and report {report_id} - already in instance log"
-        #     )
-        #     continue
-        # if regvil_instance_client.instance_created(
-        #     org_number, config.app_config.tag["tag_instance"]
-        # ):
-        #     logging.info(
-        #         f"Skipping org {org_number} and report {report_id}- already in storage"
-        #     )
-        #     continue
+        if regvil_instance_client.instance_created(
+            org_number, config.app_config.tag["tag_instance"]
+        ):
+            logging.info(
+                f"Skipping org {org_number} and report {report_id}- already in storage"
+            )
+            continue
 
         logging.info(
             f"Creating new instance for org {org_number} and report id {report_id}"
@@ -102,17 +97,18 @@ def main() -> None:
             logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
+            party_id, instance_id = instance_meta_data.get("id").split("/")  # Extract instance ID and party ID from json
             #New code to handle instance data
             instance_data = regvil_instance_client.get_instance_data(
-                instance_meta_data['instanceOwner'].get("partyId"),
-                instance_meta_data.get("id"),
+                party_id,
+                instance_id,
                 instance_client_data_meta_data.get('id')
             )
             if instance_data.status_code != 200:
                 logging.error(
                     f"Failed to retrieve instance data for org nr {org_number}/ report id {report_id}: {instance_data.status_code}"
                 )
-                continue
+                
             instance_data_file = instance_data.json()
             # Log the instance creation
             tracker.logging_instance(

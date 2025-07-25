@@ -26,57 +26,54 @@ client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), cred
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def main():
+def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
-    # path_to_initiell_skjema_storage = Path(__file__).parent / "data" / os.getenv("ENV") / "data_storage"
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(config)
     tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
 
-    pending_instance = find_event_by_instance_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
+    digitaliseringstiltak_report_id = find_event_by_instance_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
 
-    instance_meta = regvil_instance_client.get_instance(pending_instance["instancePartyId"], f"{pending_instance['instancePartyId']}/{pending_instance['instanceId']}")
+    instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
     if not instance_meta:
-        logging.warning(f"No instance metadata returned for {pending_instance['instanceId']}")
-
+        logging.error(f"Failed to fetch instance: {instance_meta.status_code if instance_meta else 'No response'}")
+        return None
     try:
         instance_meta_info = instance_meta.json()
         meta_data = get_meta_data_info(instance_meta_info["data"])
-        # tags = meta_data["tags"]
-        if True:
-        #if tags == [config.app_config.tag["tag_instance"]] and meta_data["lastChangedBy"] == meta_data["createdBy"]:
-            instance_data = regvil_instance_client.get_instance_data(
-                    pending_instance["instancePartyId"],
-                    f"{pending_instance['instancePartyId']}/{pending_instance['instanceId']}",
-                    pending_instance["data_info.dataGuid"]
-                )
 
+        if is_valid_instance(meta_data, config.app_config.tag["tag_instance"]):
+            instance_data = regvil_instance_client.get_instance_data(
+                    party_id,
+                    instance_id,
+                    meta_data["id"]
+                )
+            
+            report_data = instance_data.json()           
             response = regvil_instance_client.tag_instance_data(
-                    pending_instance["instancePartyId"],
-                    f"{pending_instance['instancePartyId']}/{pending_instance['instanceId']}",
-                    pending_instance["data_info.dataGuid"],
+                    party_id,
+                    instance_id,
+                    meta_data["id"],
                     config.app_config.tag["tag_download"]
                 )
 
             tracker.logging_instance(
-                    pending_instance['org_number'],
-                    pending_instance["digitaliseringstiltak_report_id"],
+                    instance_meta_info["instanceOwner"]["organisationNumber"],
+                    digitaliseringstiltak_report_id,
                     instance_meta_info,
-                    instance_data.json(),
+                    report_data,
                     config.app_config.tag["tag_download"]
                 )
             tracker.save_to_disk()
 
-            logging.info(f"Successfully downloaded and tagged: {tracker.file_name} (HTTP {response.status_code})")
+            logging.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
+            return {"dato": config.app_config.get_date(report_data), "next_app_name": config.workflow_dag.get_next(app_name)} #Write logic to get dato out of download
 
         else:
-            logging.info(f"Already downloaded or invalid tags for: {pending_instance['digitaliseringstiltak_report_id']} - {pending_instance['instanceId']}")
+            logging.warning(f"Already downloaded or invalid tags for: {pending_instance['digitaliseringstiltak_report_id']} - {pending_instance['instanceId']}")
+            return None
     except Exception as e:
-            logging.exception(f"Error processing instance {pending_instance['instanceId']}")
+            logging.exception(f"Error processing party id: {party_id}, instance id {instance_id}")
             raise
-
-
-if __name__ == "__main__":
-    main()

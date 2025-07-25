@@ -12,7 +12,8 @@ class PrefillValidationError(Exception):
 def find_event_by_instance_blob(directory: str, appId: str, instance_id: str, event_type: str) -> Dict[str, Any]:
     if not blob_exists(directory+f"{appId}_{event_type}_{instance_id}.json"):
         raise ValueError(f"File {appId}_{event_type}_{instance_id}.json does not exist.")
-    return read_blob(directory+f"{appId}_{event_type}_{instance_id}.json")
+    json_data = read_blob(directory+f"{appId}_{event_type}_{instance_id}.json")
+    return json_data["digitaliseringstiltak_report_id"]
 
 # def find_event_by_instance(log_data: dict, instance_id: str, event_type: str):
 #     organisations = log_data.get("organisations", {})
