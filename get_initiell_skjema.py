@@ -76,7 +76,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                 )
             tracker.save_to_disk()
             logging.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
-            return {"dato": config.app_config.get_date(report_data), "next_app_name": config.workflow_dag.get_next(app_name)} #Write logic to get dato out of download
+            return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "report_id": pending_instance["digitaliseringstiltak_report_id"] ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
 
         else:
             logging.warning(f"Already downloaded or invalid tags for: {pending_instance['digitaliseringstiltak_report_id']} - {pending_instance['instanceId']}")
