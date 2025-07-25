@@ -67,9 +67,7 @@ def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional
         else:
             logging.warning(f"API call failed with status {response.status_code}: {response.text}")
         
-        if response.status_code >= 400:
-            response.raise_for_status()
-        return response
+        return None
             
     except requests.exceptions.ConnectionError:
         logging.error(f"Connection error when calling {url}")
@@ -241,13 +239,11 @@ class AltinnInstanceClient:
             maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
     
-    def get_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
 
-    def get_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
     
@@ -281,13 +277,11 @@ class AltinnInstanceClient:
                 return True
         return False
     
-    def complete_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def complete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/complete"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"))
     
-    def update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def update_substatus(self, instanceOwnerPartyId: str, instance_id: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/substatus"
         payload = {
             "label": "skjema_instance_created",
@@ -295,8 +289,7 @@ class AltinnInstanceClient:
         }
         return make_api_call(method="PUT", url=url, headers=self._get_headers(), data=json.dumps(payload))
     
-    def tag_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def tag_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"), data=json.dumps(tag))
     

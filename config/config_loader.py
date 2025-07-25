@@ -5,7 +5,7 @@ import json
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 
-from config.utils import validate_initiell_prefill_data, transform_initiell_data_to_nested_with_prefill
+from config.utils import validate_initiell_prefill_data, transform_initiell_data_to_nested_with_prefill, get_status_date, get_initiell_date, get_oppstart_date
 
 PREFILL_TRANSFORMERS = {
     "regvil-2025-initiell": transform_initiell_data_to_nested_with_prefill,
@@ -13,6 +13,12 @@ PREFILL_TRANSFORMERS = {
 
 VALIDATE_TRANSFORMERS = {
     "regvil-2025-initiell": validate_initiell_prefill_data,
+}
+
+GET_DATES = {
+    "regvil-2025-initiell": get_initiell_date,
+    "regvil-2025-oppstart": get_oppstart_date,
+    "regvil-2025-status": get_status_date,
 }
 
 @dataclass
@@ -53,6 +59,12 @@ class APPConfig:
     @classmethod
     def app_name(cls, app_name: str) -> "APPConfig":
         return cls(app_name=app_name)
+    
+    def get_date(self, report_data) -> str:
+        get_date_fun = GET_DATES.get(self.app_name)
+        if not get_date_fun:
+            raise ValueError(f"No get date func defined for app: {self.app_name}")
+        return get_date_fun(report_data, self.timedelta_visibleAfter)
     
     def get_prefill_data(self, data) -> dict:
         transformer = PREFILL_TRANSFORMERS.get(self.app_name)
