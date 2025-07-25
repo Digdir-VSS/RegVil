@@ -87,12 +87,6 @@ class WorkflowDAG:
 
     def is_terminal(self, current: str) -> bool:
         return current not in self.flow
-    
-    def get_previous(self, current: str) -> str | None:
-        for prev, nxt in self.flow.items():
-            if nxt == current:
-                return prev
-        return None
 
 @dataclass
 class APIConfig:
