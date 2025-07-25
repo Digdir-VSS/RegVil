@@ -15,32 +15,6 @@ def find_event_by_instance_blob(directory: str, appId: str, instance_id: str, ev
     json_data = read_blob(directory+f"{appId}_{event_type}_{instance_id}.json")
     return json_data["digitaliseringstiltak_report_id"]
 
-# def find_event_by_instance(log_data: dict, instance_id: str, event_type: str):
-#     organisations = log_data.get("organisations", {})
-#     if not organisations:
-#         raise ValueError("Log data is empty.")
-#     for _, org_data in organisations.items():
-#         events = org_data.get("events", [])
-#         for event in events:
-#             _, event_instance_id = event.get("instanceId").split('/')
-#             if (event.get("event_type") == event_type) & (event_instance_id == instance_id):
-#                 return event
-#     raise ValueError(
-#         f"No matching event found for instance_id='{instance_id}', "
-#         f"event_type='{event_type}' in log data."
-#     )
-
-# def _write_json_file(log_data: Dict[str, Any], file_path: str) -> None:
-#     file_path_str = str(file_path)
-
-#     # 1. Load existing data
-#     if os.path.exists(file_path_str):
-#         backup_path = file_path_str.replace('.json', f'_backup_log.json')
-#         shutil.copy2(file_path_str, backup_path)
-    
-#     with open(file_path_str, 'w', encoding='utf-8') as f:
-#         json.dump(log_data, f, ensure_ascii=False, indent=2)
-
 
 class InstanceTracker:
     def __init__(self, log_file: Dict[str, Any], log_path: str = None):
@@ -54,23 +28,6 @@ class InstanceTracker:
         # Now expects a directory, not a file
         return cls({"organisations": {}}, log_path=path_to_json_dir)
     
-
-
-    # def has_processed_instance(self, org_number: str, digitaliseringstiltak_report_id: str) -> bool:
-    #     org_data = self.log_file.get("organisations", {}).get(org_number, {})
-    #     events = org_data.get("events", [])
-    #     for event in events:
-    #         if (event.get("event_type") == "initiell_skjema_instance_created" and
-    #             event.get("digitaliseringstiltak_report_id") == digitaliseringstiltak_report_id):
-    #             return True
-    #     return False
-    
-    # def get_events_from_log(self, event_type: str) -> List[Dict[str, Any]]:
-    #     all_look_up_events = []
-    #     for _, meta_info in self.log_file["organisations"].items():
-    #         look_up_events = [event for event in meta_info["events"] if event["event_type"] == event_type]
-    #         all_look_up_events.extend(look_up_events)
-    #     return all_look_up_events
       
     def logging_varlsing(self, org_number: str, org_name: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
@@ -124,9 +81,7 @@ class InstanceTracker:
             "data": data_dict
         } 
 
-            # Simplified - self.log_file["organisations"] already exists from initialization
-        # if org_number not in self.log_file["organisations"]:
-        #     self.log_file["organisations"][org_number] = {"events": []}
+
 
         self.log_file = instance_log_entry
         self.log_changes = instance_log_entry
