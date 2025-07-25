@@ -39,7 +39,7 @@ def test_run_success(monkeypatch):
     # Mock instance tracker
     mock_tracker = MagicMock()
     mock_tracker.has_processed_instance.return_value = False
-    monkeypatch.setattr("upload_skjema.InstanceTracker.from_log_file", lambda _: mock_tracker)
+    monkeypatch.setattr("upload_skjema.InstanceTracker.from_directory", lambda _: mock_tracker)
 
     # Mock get_meta_data_info
     monkeypatch.setattr("upload_skjema.get_meta_data_info", lambda data: {"id": "data-guid-123"})

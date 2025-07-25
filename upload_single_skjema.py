@@ -61,9 +61,7 @@ def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data:
         app_config,
     )
 
-    tracker = InstanceTracker.from_log_file(
-        Path(__file__).parent / "data"  /os.getenv("ENV")/ "instance_log" / "instance_log.json"
-    )
+    tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
 
     logging.info(f"Processing org {org_number}, report {report_id}")
 
@@ -96,9 +94,11 @@ def run(org_number: str, report_id: str, dato: str, app_name: str, prefill_data:
                 f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
         tracker.logging_instance(
+            instance_meta_data["id"],
             org_number,
             report_id,
-            created_instance.json(),
+            instance_meta_data,
+            instance_data_meta_data,
             app_config.app_config.tag["tag_instance"],
             )
         tracker.save_to_disk()
