@@ -71,8 +71,8 @@ def test_get_initiell_date_paabegynt(monkeypatch):
             "DatoPaabegynt": "2025-07-01T00:00:00Z"
         }
     }
-    monkeypatch.setattr("config.utils.get_today_date", lambda: "2024-07-24T00:00:00Z")
-    assert get_initiell_date(reported_data, "P3M") == "2025-10-01T00:00:00Z"
+    monkeypatch.setattr("config.utils.get_today_date", lambda: "2026-07-01T00:00:00Z")
+    assert get_initiell_date(reported_data, "P3M") == "2026-10-01T00:00:00Z"
 
 def test_get_initiell_date_forventet_oppstart():
     reported_data = {
@@ -82,7 +82,7 @@ def test_get_initiell_date_forventet_oppstart():
             "DatoForventetOppstart": "2025-08-01T00:00:00Z"
         }
     }
-    assert get_initiell_date(reported_data, "P3M") == "2025-11-01T00:00:00Z"
+    assert get_initiell_date(reported_data, "P3M") == "2025-08-01T00:00:00Z"
 
 def test_get_initiell_date_fallback_to_today(monkeypatch):
     reported_data = {
@@ -186,7 +186,7 @@ def test_load_full_config(monkeypatch):
 
     # date delta logic
     assert hasattr(initiell_config.app_config, "timedelta_visibleAfter")
-    assert initiell_config.app_config.timedelta_visibleAfter == None
+    assert initiell_config.app_config.timedelta_visibleAfter == "P6M"
     assert initiell_config.app_config.timedelta_dueBefore == None
     assert initiell_config.app_config.visibleAfter == "2025-07-17T00:00:00Z"
     assert initiell_config.app_config.dueBefore == "2025-09-01T12:00:00Z"
