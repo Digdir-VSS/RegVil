@@ -286,16 +286,16 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
 
-def get_initiell_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+def get_initiell_date(reported_data: DataModel, time_delta: str) -> Optional[str]:
     initiell = reported_data.get("Initiell")
     if initiell.get("ErTiltaketPaabegynt"):
-        initell_date = add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
+        initell_date = initiell.get("DatoPaabegynt")
         if check_date_before(initell_date, get_today_date()):
             return add_time_delta(get_today_date(), time_delta)
-        return add_time_delta(initiell.get("DatoPaabegynt"), time_delta)
+        return initiell.get("DatoPaabegynt")
     else:
         if initiell.get("VetOppstartsDato"):
-            return add_time_delta(initiell.get("DatoForventetOppstart"), time_delta)
+            return initiell.get("DatoForventetOppstart")
         else: 
             return add_time_delta(get_today_date(), time_delta)
         
