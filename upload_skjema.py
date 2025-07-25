@@ -112,9 +112,10 @@ def main() -> None:
             instance_data_file = instance_data.json()
             # Log the instance creation
             tracker.logging_instance(
+                instance_id,
                 prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"],
                 prefill_data_row["digitaliseringstiltak_report_id"],
-                created_instance.json(),
+                instance_meta_data,
                 instance_data_file,
                 config.app_config.tag["tag_instance"],
             )

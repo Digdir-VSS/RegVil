@@ -4,14 +4,16 @@ import json
 import datetime
 import os
 import shutil
-from config.utils import blob_exists, write_blob, read_blob, blob_directory_exists
+from config.utils import chech_file_exists, write_blob, read_blob
+import logging
 class PrefillValidationError(Exception):
     pass
 
 
-def find_event_by_instance_blob(directory: str, appId: str, instance_id: str, event_type: str) -> Dict[str, Any]:
-    if not blob_exists(directory+f"{appId}_{event_type}_{instance_id}.json"):
-        raise ValueError(f"File {appId}_{event_type}_{instance_id}.json does not exist.")
+def get_reportid_from_blob(directory: str, appId: str, instance_id: str, event_type: str) -> Dict[str, Any]:
+    if not chech_file_exists(directory+f"{appId}_{event_type}_{instance_id}.json"):
+        logging.warning(f"File {appId}_{event_type}_{instance_id}.json does not exist.")
+        return None
     json_data = read_blob(directory+f"{appId}_{event_type}_{instance_id}.json")
     return json_data["digitaliseringstiltak_report_id"]
 
@@ -48,7 +50,7 @@ class InstanceTracker:
         self.log_file = instance_log_entry
         self.log_changes = instance_log_entry
         
-    def logging_instance(self, org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):
+    def logging_instance(self, instance_id: str,org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
           raise ValueError("Organization number and report ID cannot be empty")
         
@@ -61,7 +63,6 @@ class InstanceTracker:
         
         datamodel_metadata = get_meta_data_info(instance_meta_data["data"])
         app_id = instance_meta_data["appId"].split("/")[-1]
-        instance_id = instance_meta_data.get("id").split("/")[-1]   
         instance_log_entry = {
             "event_type": event_type,#"initiell_skjema_instance_created"
             "appId": app_id,

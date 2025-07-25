@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
-from clients.instance_logging import InstanceTracker, find_event_by_instance_blob
+from clients.instance_logging import InstanceTracker, get_reportid_from_blob
 from config.config_loader import load_full_config
 
 load_dotenv()
@@ -33,7 +33,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     regvil_instance_client = AltinnInstanceClient.init_from_config(config)
     tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
 
-    digitaliseringstiltak_report_id = find_event_by_instance_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
+    digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
@@ -60,6 +60,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                 )
 
             tracker.logging_instance(
+                    instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
                     digitaliseringstiltak_report_id,
                     instance_meta_info,

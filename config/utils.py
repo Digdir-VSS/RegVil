@@ -206,7 +206,7 @@ def connect_blob():
             credential = DefaultAzureCredential()
 
         blob_service_client = BlobServiceClient(os.getenv('BLOB_STORAGE_ACCOUNT_URL'), credential=credential)
-        container_client = blob_service_client.get_container_client("regvil-blob-container")
+        container_client = blob_service_client.get_container_client("BLOB_CONTAINER_NAME")
         
         return container_client
 
@@ -214,7 +214,7 @@ def connect_blob():
         logging.error(f"Error connecting to Azure Blob Storage: {e}")
         return None
     
-def blob_exists(file: str) -> bool:
+def chech_file_exists(file: str) -> bool:
     container_client = connect_blob()
     if not container_client:
         return False
