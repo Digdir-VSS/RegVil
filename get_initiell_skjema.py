@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
-from clients.instance_logging import InstanceTracker, find_event_by_instance
+from clients.instance_logging import InstanceTracker, get_reportid_from_blob
 from config.config_loader import load_full_config
 
 load_dotenv()
@@ -30,13 +30,16 @@ secret_value = secret.value
 
 def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     path_to_config_folder = Path(__file__).parent / "config_files"
-    config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
-    path_to_initiell_skjema_storage = Path(__file__).parent / "data" / os.getenv("ENV") / "data_storage"
+    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
+
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(config)
-    tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" /os.getenv("ENV") / "instance_log" / "instance_log.json")
+    tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
 
-    pending_instance = find_event_by_instance(tracker.log_file, instance_id, config.app_config.tag["tag_instance"])
+
+    digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
+
+
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
@@ -53,20 +56,8 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     instance_id,
                     meta_data["id"]
                 )
-            
-            report_data = instance_data.json()
-            data_to_storage = {
-                    "meta_info": {
-                        "org_number": instance_meta_info["instanceOwner"]["organisationNumber"],
-                        "instancePartyId": party_id,
-                        "instanceId": instance_id,
-                        "dataGuid": meta_data["id"],
-                        "digitaliseringstiltak_report_id": pending_instance["digitaliseringstiltak_report_id"]
-                    },
-                    "data": report_data
-                }
-            filename = f"initiellskjema_{instance_meta_info['instanceOwner']['organisationNumber']}_{pending_instance['digitaliseringstiltak_report_id']}_{party_id}_{instance_id}.json"
-            write_to_json(data_to_storage, path_to_initiell_skjema_storage, filename) #change to azure data blob function
+
+            report_data = instance_data.json()           
 
             response = regvil_instance_client.tag_instance_data(
                     party_id,
@@ -76,9 +67,11 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                 )
 
             tracker.logging_instance(
+                    instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
-                    pending_instance["digitaliseringstiltak_report_id"],
+                    digitaliseringstiltak_report_id,
                     instance_meta_info,
+                    report_data,
                     config.app_config.tag["tag_download"]
                 )
             tracker.save_to_disk()

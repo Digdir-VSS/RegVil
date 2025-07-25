@@ -4,75 +4,32 @@ import json
 import datetime
 import os
 import shutil
-
+from config.utils import chech_file_exists, write_blob, read_blob
+import logging
 class PrefillValidationError(Exception):
     pass
 
-def find_event_by_instance(log_data: dict, instance_id: str, event_type: str):
-    organisations = log_data.get("organisations", {})
-    if not organisations:
-        raise ValueError("Log data is empty.")
-    for _, org_data in organisations.items():
-        events = org_data.get("events", [])
-        for event in events:
-            _, event_instance_id = event.get("instanceId").split('/')
-            if (event.get("event_type") == event_type) & (event_instance_id == instance_id):
-                return event
-    raise ValueError(
-        f"No matching event found for instance_id='{instance_id}', "
-        f"event_type='{event_type}' in log data."
-    )
 
-def _write_json_file(log_data: Dict[str, Any], file_path: str) -> None:
-    file_path_str = str(file_path)
-
-    # 1. Load existing data
-    if os.path.exists(file_path_str):
-        backup_path = file_path_str.replace('.json', f'_backup_log.json')
-        shutil.copy2(file_path_str, backup_path)
-    
-    with open(file_path_str, 'w', encoding='utf-8') as f:
-        json.dump(log_data, f, ensure_ascii=False, indent=2)
+def get_reportid_from_blob(directory: str, appId: str, instance_id: str, event_type: str) -> Dict[str, Any]:
+    if not chech_file_exists(directory+f"{appId}_{event_type}_{instance_id}.json"):
+        logging.warning(f"File {appId}_{event_type}_{instance_id}.json does not exist.")
+        return None
+    json_data = read_blob(directory+f"{appId}_{event_type}_{instance_id}.json")
+    return json_data["digitaliseringstiltak_report_id"]
 
 
 class InstanceTracker:
     def __init__(self, log_file: Dict[str, Any], log_path: str = None):
-        self.log_file = log_file
-        self.log_changes = {} 
+        self.log_file = {}
+        self.file_name = "" 
         self.log_path = log_path
+        self.log_changes = {}
     
     @classmethod
-    def from_log_file(cls, path_to_json_file: str):
-        try:
-            with open(path_to_json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            # Ensure proper structure
-            if "organisations" not in data:
-                data["organisations"] = {}
-            return cls(data, log_path=path_to_json_file)
-        except FileNotFoundError:
-            # File doesn't exist, start with proper structure
-            data = {"organisations": {}}
-            return cls(data, log_path=path_to_json_file)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in log file: {e}")
-
-    def has_processed_instance(self, org_number: str, digitaliseringstiltak_report_id: str) -> bool:
-        org_data = self.log_file.get("organisations", {}).get(org_number, {})
-        events = org_data.get("events", [])
-        for event in events:
-            if (event.get("event_type") == "initiell_skjema_instance_created" and
-                event.get("digitaliseringstiltak_report_id") == digitaliseringstiltak_report_id):
-                return True
-        return False
+    def from_directory(cls, path_to_json_dir: str):
+        # Now expects a directory, not a file
+        return cls({"organisations": {}}, log_path=path_to_json_dir)
     
-    def get_events_from_log(self, event_type: str) -> List[Dict[str, Any]]:
-        all_look_up_events = []
-        for _, meta_info in self.log_file["organisations"].items():
-            look_up_events = [event for event in meta_info["events"] if event["event_type"] == event_type]
-            all_look_up_events.extend(look_up_events)
-        return all_look_up_events
       
     def logging_varlsing(self, org_number: str, org_name: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
@@ -89,57 +46,57 @@ class InstanceTracker:
         }
 
             # Simplified - self.log_file["organisations"] already exists from initialization
-        if org_number not in self.log_file["organisations"]:
-            self.log_file["organisations"][org_number] = {"events": []}
-
-
-        self.log_file["organisations"][org_number]["events"].append(instance_log_entry)
-        self.log_changes[org_number] = instance_log_entry
+        self.file_name  = f"{org_number}_{event_type}_{shipment_id}.json"
+        self.log_file = instance_log_entry
+        self.log_changes = instance_log_entry
         
-    def logging_instance(self, org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, event_type: str):
+    def logging_instance(self, instance_id: str,org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
           raise ValueError("Organization number and report ID cannot be empty")
         
         if not instance_meta_data:
             raise ValueError("Instance meta data cannot be empty")
-
+        if not data_dict:
+            raise ValueError("Data dictionary cannot be empty")
         if org_number != instance_meta_data['instanceOwner'].get("organisationNumber"):
             raise ValueError(f"Organization numbers do not match: {org_number} != {instance_meta_data['instanceOwner'].get('organisationNumber')}")
         
         datamodel_metadata = get_meta_data_info(instance_meta_data["data"])
+        app_id = instance_meta_data["appId"].split("/")[-1]
         instance_log_entry = {
             "event_type": event_type,#"initiell_skjema_instance_created"
+            "appId": app_id,
             "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id, 
             "org_number": org_number,
             "virksomhets_name": instance_meta_data.get("instanceOwner").get("party").get("name"),
             "processed_timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             "instancePartyId": instance_meta_data['instanceOwner'].get("partyId"),
-            "instanceId": instance_meta_data.get("id"),
-            "instance_info": {
-                "last_changed": instance_meta_data.get('lastChanged'),
-                "last_changed_by": instance_meta_data.get('lastChangedBy'),
-                "created": instance_meta_data.get('created'),
-            },
-            "data_info": {
-                "last_changed": datamodel_metadata.get('lastChanged'),
-                "last_changed_by": datamodel_metadata.get('lastChangedBy'),
-                "created": datamodel_metadata.get('created'),
-                "dataGuid": datamodel_metadata.get('id'),
-            },
-        }
+            "instanceId": instance_id,
+            "instance_info.last_changed": instance_meta_data.get('lastChanged'),
+            "instance_info.last_changed_by": instance_meta_data.get('lastChangedBy'),
+            "instance_info.created": instance_meta_data.get('created'),
+            "data_info.last_changed": datamodel_metadata.get('lastChanged'),
+            "data_info.last_changed_by": datamodel_metadata.get('lastChangedBy'),
+            "data_info.created": datamodel_metadata.get('created'), 
+            "data_info.dataGuid": datamodel_metadata.get('id'),
+            "data": data_dict
+        } 
 
-            # Simplified - self.log_file["organisations"] already exists from initialization
-        if org_number not in self.log_file["organisations"]:
-            self.log_file["organisations"][org_number] = {"events": []}
 
-        self.log_file["organisations"][org_number]["events"].append(instance_log_entry)
-        self.log_changes[org_number] = instance_log_entry
+
+        self.log_file = instance_log_entry
+        self.log_changes = instance_log_entry
+        self.file_name = f"{app_id}_{event_type}_{instance_id}.json"
 
 
     def save_to_disk(self) -> None:
         if not self.log_path:
             raise ValueError("No log file path set.")
-        _write_json_file(self.log_file, self.log_path)
+        if not self.file_name:
+            raise ValueError("No file name set for logging.")
+        if not self.log_file:
+            raise ValueError("No log data to save.")
+        write_blob( self.log_path+self.file_name,self.log_file)
         
         # Clear changes after saving
         self.log_changes.clear()
