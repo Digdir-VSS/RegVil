@@ -13,13 +13,15 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
+def is_valid_instance(meta_data: dict, tag_expected: str) -> bool:
+    return (
+        meta_data.get("tags") == [tag_expected] and
+        meta_data.get("createdBy") != meta_data.get("lastChangedBy")
+    )
+
 def write_to_json(data: Dict[str, Any], path_to_folder: Path, filename: str) -> None:
     with open(path_to_folder / filename, 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
-
-def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
-    with open(path_to_json_file, 'r', encoding='utf-8') as file:
-        return json.load(file)
 
 credential = DefaultAzureCredential()
 client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential)
@@ -30,10 +32,14 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
 
+
     regvil_instance_client = AltinnInstanceClient.init_from_config(config)
     tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
 
+
     digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv("ENV")}/event_log/","regvil-2025-initiell", "0a532b55-76b3-41f9-9b3c-58eee9eaea6f", config.app_config.tag["tag_instance"])
+
+
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
@@ -50,8 +56,9 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     instance_id,
                     meta_data["id"]
                 )
-            
+
             report_data = instance_data.json()           
+
             response = regvil_instance_client.tag_instance_data(
                     party_id,
                     instance_id,
@@ -68,7 +75,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     config.app_config.tag["tag_download"]
                 )
             tracker.save_to_disk()
-
             logging.info(f"Successfully downloaded and tagged: {filename} (HTTP {response.status_code})")
             return {"dato": config.app_config.get_date(report_data), "next_app_name": config.workflow_dag.get_next(app_name)} #Write logic to get dato out of download
 
