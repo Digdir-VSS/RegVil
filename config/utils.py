@@ -211,7 +211,7 @@ def connect_blob():
             credential = DefaultAzureCredential()
 
         blob_service_client = BlobServiceClient(os.getenv('BLOB_STORAGE_ACCOUNT_URL'), credential=credential)
-        container_client = blob_service_client.get_container_client("BLOB_CONTAINER_NAME")
+        container_client = blob_service_client.get_container_client(os.getenv("BLOB_CONTAINER_NAME"))
         
         return container_client
 
