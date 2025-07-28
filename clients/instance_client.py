@@ -22,7 +22,6 @@ def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) ->
             return instance
         else:
             continue
-
     raise ValueError("No instance with dataType='DataModel' and contentType='application/xml' or 'application/json' was found.")
 
 def extract_instances_ids(data_storage_extract):
@@ -30,8 +29,6 @@ def extract_instances_ids(data_storage_extract):
     for instance in data_storage_extract["instances"]:
         if instance.get("data", []):
             instance_data_meta_data = get_meta_data_info(instance["data"])
-
-
             instances.append(
             {"instanceOwnerPartyId": instance["instanceOwner"]["partyId"], 
             "organisationNumber": instance["instanceOwner"].get("organisationNumber", ""), 
@@ -58,15 +55,21 @@ def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional
             return response
         elif response.status_code == 404:
             logging.warning(f"Resource not found: {method} {url}")
+            return response
         elif response.status_code == 500:
             logging.warning(f"Error code {response.status_code} Error message {response.json()}")
+            return response
         elif response.status_code == 403:
             logging.warning(f"Access denied: {method} {url}")
+            return response
         elif response.status_code == 401:
             logging.warning(f"Unauthorized access - check authentication token")
+            return response
+        elif response.status_code == 400:
+            logging.warning(f"Bad Request")
+            return response
         else:
             logging.warning(f"API call failed with status {response.status_code}: {response.text}")
-        
         return None
             
     except requests.exceptions.ConnectionError:
