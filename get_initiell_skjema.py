@@ -37,12 +37,11 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
 
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(config)
-    tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
+    tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/event_log/")
 
 
-    digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv("ENV")}/event_log/",app_name, instance_id, config.app_config.tag["tag_instance"])
-
-
+    digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv('ENV')}/event_log/",app_name, instance_id, config.app_config.tag["tag_instance"])
+    digitaliseringstiltak_report_id = "abc"
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
@@ -77,9 +76,10 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     report_data,
                     config.app_config.tag["tag_download"]
                 )
+            
             tracker.save_to_disk()
             logging.info(f"Successfully downloaded and tagged: {instance_id} (HTTP {response.status_code})")
-            return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
+            return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
 
         else:
             logging.warning(f"Already downloaded or invalid tags for: {digitaliseringstiltak_report_id} - {instance_id}")
