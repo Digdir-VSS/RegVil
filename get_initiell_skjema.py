@@ -13,10 +13,9 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
-def is_valid_instance(meta_data: dict, tag_expected: str) -> bool:
+def is_valid_instance(meta_data: dict) -> bool:
     if meta_data:
         return (
-            meta_data.get("tags") == [tag_expected] and
             meta_data.get("createdBy") != meta_data.get("lastChangedBy")
         )
     else:
@@ -41,7 +40,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
 
 
     digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv('ENV')}/event_log/",app_name, instance_id, config.app_config.tag["tag_instance"])
-    digitaliseringstiltak_report_id = "abc"
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
@@ -61,13 +59,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
 
             report_data = instance_data.json()           
 
-            response = regvil_instance_client.tag_instance_data(
-                    party_id,
-                    instance_id,
-                    meta_data.get("id"),
-                    config.app_config.tag["tag_download"]
-                )
-
             tracker.logging_instance(
                     instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
@@ -78,11 +69,12 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                 )
             
             tracker.save_to_disk()
-            logging.info(f"Successfully downloaded and tagged: {instance_id} (HTTP {response.status_code})")
+            
+            logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
             return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
 
         else:
-            logging.warning(f"Already downloaded or invalid tags for: {digitaliseringstiltak_report_id} - {instance_id}")
+            logging.warning(f"Already downloaded or invalid tags for: {app_name} - {digitaliseringstiltak_report_id} - {instance_id}")
             return None
     except Exception as e:
             logging.exception(f"Error processing party id: {party_id}, instance id {instance_id}")
