@@ -109,7 +109,7 @@ def main() -> None:
                 )
                 
             instance_data_file = instance_data.json()
-            # Log the instance creation
+            # Log the instance creation & save it
             tracker.logging_instance(
                 instance_id,
                 prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"],
@@ -118,8 +118,6 @@ def main() -> None:
                 instance_data_file,
                 config.app_config.tag["tag_instance"],
             )
-            # Save the instance data to disk
-            tracker.save_to_disk()
 
 
             tag_result = regvil_instance_client.tag_instance_data(

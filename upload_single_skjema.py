@@ -97,6 +97,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
         logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_meta_data['id']}"
             )
+        # Log the instance creation and save it
         tracker.logging_instance(
             instance_id,
             org_number,
@@ -105,7 +106,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
             instance_data_meta_data,
             api_config.app_config.tag["tag_instance"],
             )
-        tracker.save_to_disk()
+
         tag_result = regvil_instance_client.tag_instance_data(
                 party_id,
                 instance_id,

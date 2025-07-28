@@ -44,7 +44,6 @@ def main() -> None:
         status = varsling_client.get_shipment_status(shipment_id)
         tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
         tracker.logging_varlsing(org_number="311045407", org_name="TestVirksomhet", digitaliseringstiltak_report_id="abc-def-ghi-jkl-mno-pqr", shipment_id=status.json(), recipientEmail=recipient_email, event_type="Varsling1Send")
-        tracker.save_to_disk()
 
 if __name__ == "__main__":
     main()
