@@ -67,7 +67,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     meta_data.get("id"),
                     config.app_config.tag["tag_download"]
                 )
-
+            # Log and save instances to disk
             tracker.logging_instance(
                     instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
@@ -77,7 +77,6 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     config.app_config.tag["tag_download"]
                 )
             
-            tracker.save_to_disk()
             logging.info(f"Successfully downloaded and tagged: {instance_id} (HTTP {response.status_code})")
             return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
 
