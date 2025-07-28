@@ -36,7 +36,6 @@ def main() -> None:
     regvil_instance_client = AltinnInstanceClient.init_from_config(
         config,
     )
-
     tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
     logging.info(f"Processing {len(test_prefill_data)} organizations")
 
