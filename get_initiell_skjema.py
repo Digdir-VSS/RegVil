@@ -6,7 +6,6 @@ import logging
 import json
 from dotenv import load_dotenv
 import os
-import azure.functions as func
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker, get_reportid_from_blob
@@ -31,7 +30,7 @@ client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), cred
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str], func.HttpResponse]:
+def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str], str]:
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
@@ -46,18 +45,18 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
 
     if not instance_meta:
         logging.error(f"Failed to fetch party id: {party_id} instance id: {instance_id}")
-        return {}, func.HttpResponse("Failed to fetch instance from Altinn", status_code=502)
+        return {}, 502
     if instance_meta.status_code not in [200, 201]:
-        return {}, func.HttpResponse(instance_meta.text, status_code=instance_meta.status_code)
+        return {}, str(instance_meta.status_code)
 
     try:
         instance_meta_info = instance_meta.json()
     except ValueError:
         logging.error(f"Error processing party id: {party_id}, instance id {instance_id}")
-        return {}, func.HttpResponse("Invalid instance data", status_code=502)
+        return {}, 502
     meta_data = get_meta_data_info(instance_meta_info.get("data"))
 
-    if is_valid_instance(meta_data, config.app_config.tag["tag_instance"]):
+    if is_valid_instance(meta_data):
         instance_data = regvil_instance_client.get_instance_data(
                     party_id,
                     instance_id,
@@ -78,8 +77,8 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
         tracker.save_to_disk()
             
         logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
-        return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data}, func.HttpResponse("Instance downloaded", status_code=200)
+        return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data}, 200
 
     else:
         logging.warning(f"Already downloaded: {app_name} InstanceId: {instance_id} ReportId: {digitaliseringstiltak_report_id}")
-        return {}, func.HttpResponse("Instance already downloaded", status_code=204)
+        return {}, 204
