@@ -2,6 +2,7 @@ from flask import Flask, request
 import logging
 
 from get_initiell_skjema import run as download_skjema
+from upload_single_skjema import run as upload_skjema
 
 app = Flask(__name__)
 
@@ -30,7 +31,13 @@ def handle_event():
                 "instance_id": instance_id,
                 "app_name": app_name
             }, 500
-        return "Event received", 200
+        
+        if app_name == "regvil-2025-slutt":
+            logging.info(f"Terminal app reached: {app_name}. No further processing.")
+            return "Workflow complete – no further action.", 200
+
+        result = upload_skjema(**download_params)
+        return "Event received", result["status"]
         
     except Exception as e:
         logging.error(f"Error: {e}")

@@ -3,7 +3,7 @@
     "app_name": "regvil-2025-initiell",
     "visibleAfter": "2025-07-17T00:00:00Z",
     "dueBefore": "2025-09-01T12:00:00Z",
-    "timedelta_visibleAfter": null,
+    "timedelta_visibleAfter": "P6M",
     "timedelta_dueBefore": null,
     "tag": {
       "tag_instance": "InitiellSkjemaLevert",
