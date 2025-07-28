@@ -52,8 +52,7 @@ class InstanceTracker:
         
     def logging_instance(self, instance_id: str,org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
-          raise ValueError("Organization number and report ID cannot be empty")
-        
+          raise logging.warning("Organization number and report ID cannot be empty")
         if not instance_meta_data:
             raise ValueError("Instance meta data cannot be empty")
         if not data_dict:
@@ -64,7 +63,7 @@ class InstanceTracker:
         datamodel_metadata = get_meta_data_info(instance_meta_data["data"])
         app_id = instance_meta_data["appId"].split("/")[-1]
         instance_log_entry = {
-            "event_type": event_type,#"initiell_skjema_instance_created"
+            "event_type": event_type,
             "appId": app_id,
             "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id, 
             "org_number": org_number,
