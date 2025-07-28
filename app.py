@@ -1,5 +1,6 @@
 from flask import Flask, request
 import logging
+import azure.functions as func
 
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
@@ -22,22 +23,18 @@ def handle_event():
         logging.info(
             f"Party ID: {party_id}, Instance ID: {instance_id}, App name: {app_name}"
         )
-        download_params = download_skjema(party_id=party_id, instance_id=instance_id, app_name=app_name)
+        ## IF CLOUD EVENT
+        download_params, download_response = download_skjema(party_id=party_id, instance_id=instance_id, app_name=app_name)
         if not download_params:
-            logging.error(f"Download failed or skipped for instance {instance_id}. Skipping download.")
-            return {
-                "status": "failed",
-                "reason": "download_skjema returned None",
-                "instance_id": instance_id,
-                "app_name": app_name
-            }, 500
+            logging.error(f"Download failed or skipped for app name: {app_name} party id: {party_id} instance id: {instance_id}. Skipping download.")
+            return download_response
         
         if app_name == "regvil-2025-slutt":
             logging.info(f"Terminal app reached: {app_name}. No further processing.")
             return "Workflow complete – no further action.", 200
 
         result = upload_skjema(**download_params)
-        return "Event received", result["status"]
+        return result
         
     except Exception as e:
         logging.error(f"Error: {e}")
