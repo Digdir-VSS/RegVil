@@ -106,7 +106,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
                 f"Successfully created instance for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_meta_data['id']}"
             )
 
-     tracker.logging_instance(
+    tracker.logging_instance(
             instance_id,
             org_number,
             digitaliseringstiltak_report_id,
@@ -115,7 +115,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
             api_config.app_config.tag["tag_instance"],
             )
 
-      tag_result = regvil_instance_client.tag_instance_data(
+    tag_result = regvil_instance_client.tag_instance_data(
                 party_id,
                 instance_id,
                 instance_data_meta_data["id"],
