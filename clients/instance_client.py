@@ -298,3 +298,8 @@ class AltinnInstanceClient:
     
     def mock_test_update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None):
         return mock_update_substatus(instanceOwnerPartyId, instanceGuid, digitaliseringstiltak_report_id)
+    
+    def delete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
+        url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}?hard=true"
+        # return url, self._get_headers("application/json")
+        return make_api_call(method="DELETE", url=url, headers=self._get_headers("application/json"))

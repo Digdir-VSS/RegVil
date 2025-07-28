@@ -33,7 +33,7 @@ class InstanceTracker:
       
     def logging_varlsing(self, org_number: str, org_name: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
-          raise ValueError("Organization number and report ID cannot be empty")
+          logging.warning("Organization number and report ID cannot be empty. Shipment_id: {shipment_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         
         instance_log_entry = {
             "event_type": event_type,
@@ -49,16 +49,18 @@ class InstanceTracker:
         self.file_name  = f"{org_number}_{event_type}_{shipment_id}.json"
         self.log_file = instance_log_entry
         self.log_changes = instance_log_entry
-        
+        write_blob(self.log_path+self.file_name,self.log_file)
+        self.log_changes.clear()
+
     def logging_instance(self, instance_id: str,org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):
         if not org_number or not digitaliseringstiltak_report_id:
-          raise logging.warning("Organization number and report ID cannot be empty")
+            logging.warning("Organization number and report ID cannot be empty. Instance_id: {instance_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         if not instance_meta_data:
-            raise ValueError("Instance meta data cannot be empty")
+            logging.warning("Instance meta data cannot be empty. Instance_id: {instance_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         if not data_dict:
-            raise ValueError("Data dictionary cannot be empty")
+            logging.warning("Data dictionary cannot be empty. Instance_id: {instance_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         if org_number != instance_meta_data['instanceOwner'].get("organisationNumber"):
-            raise ValueError(f"Organization numbers do not match: {org_number} != {instance_meta_data['instanceOwner'].get('organisationNumber')}")
+            logging.warning(f"Organization numbers do not match: {org_number} != {instance_meta_data['instanceOwner'].get('organisationNumber')}. Instance_id: {instance_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         
         datamodel_metadata = get_meta_data_info(instance_meta_data["data"])
         app_id = instance_meta_data["appId"].split("/")[-1]
@@ -86,18 +88,7 @@ class InstanceTracker:
         self.log_file = instance_log_entry
         self.log_changes = instance_log_entry
         self.file_name = f"{app_id}_{event_type}_{instance_id}.json"
-
-
-    def save_to_disk(self) -> None:
-        if not self.log_path:
-            raise ValueError("No log file path set.")
-        if not self.file_name:
-            raise ValueError("No file name set for logging.")
-        if not self.log_file:
-            raise ValueError("No log data to save.")
         write_blob( self.log_path+self.file_name,self.log_file)
-        
-        # Clear changes after saving
         self.log_changes.clear()
 
                             
