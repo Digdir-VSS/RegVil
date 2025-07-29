@@ -30,18 +30,28 @@ def main() -> None:
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
-            print(f"Deleting instance {instance_id} for party {partyID}")
             instance = regvil_instance_client.get_instance(partyID, instance_id)
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
+            print(f"Deleting orgnumber {instance_meta.get('instanceOwner').get('organisationNumber')} instance {instance_id} for party {partyID}")
             dataguid = get_meta_data_info(instance_data).get("id")
-            for tag in ["InitiellSkjemaLevert", "InitiellSkjemaDownloaded", "OppstartSkjemaLevert", "OppstartSkjemaDownloaded"]:
-                _ = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag)
+            tag = get_meta_data_info(instance_data).get("tags")
+            print(tag)
+            if tag:
+                delete_tag = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag[0])
+                print(delete_tag.status_code)
+            instance = regvil_instance_client.get_instance(partyID, instance_id)
+            instance_meta = instance.json()
+            instance_data = instance_meta.get("data")
+            tag = get_meta_data_info(instance_data).get("tags")
+            print(tag)
+            
             instance_deleted = regvil_instance_client.delete_instance(partyID, instance_id)
             if instance_deleted.status_code in [200,201,204]:
                 print(f"Successfully deleted instance {instance_id}")
             else:
                 print(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
+            print("=====================\n")
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
