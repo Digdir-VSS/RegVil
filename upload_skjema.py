@@ -2,7 +2,7 @@ from typing import Any
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 from pathlib import Path
-import json
+import re
 import logging
 from dotenv import load_dotenv
 import os
@@ -10,7 +10,7 @@ import os
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-from config.utils import read_blob, create_payload
+from config.utils import read_blob, create_payload, split_party_instance_id
 
 load_dotenv()
 
@@ -20,6 +20,9 @@ client = SecretClient(
 )
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
+
+def transform_uiid_to_tag(digitaliseringstiltak_report_id: str):
+    return "".join(re.findall(r"[a-zA-Z]+",digitaliseringstiltak_report_id))
 
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
@@ -34,11 +37,11 @@ def main() -> None:
     logging.info(f"Processing {len(test_prefill_data)} organizations")
 
 
-    for prefill_data_row in test_prefill_data:
+    for prefill_data_row in test_prefill_data[0:2]:
         config.app_config.validate_prefill_data(prefill_data_row)
         data_model = config.app_config.get_prefill_data(prefill_data_row)
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
-        report_id = prefill_data_row["digitaliseringstiltak_report_id"]
+        report_id = transform_uiid_to_tag(prefill_data_row["digitaliseringstiltak_report_id"])
 
         logging.info(f"Processing org {org_number}, report {report_id}")
 
@@ -65,7 +68,7 @@ def main() -> None:
             logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
-            party_id, instance_id = instance_meta_data.get("id").split("/")  # Extract instance ID and party ID from json
+            party_id, instance_id = split_party_instance_id(instance_meta_data["id"])
             #New code to handle instance data
             instance_data = regvil_instance_client.get_instance_data(
                 party_id,
@@ -89,8 +92,8 @@ def main() -> None:
             )
 
             tag_result = regvil_instance_client.tag_instance_data(
-                instance_meta_data["instanceOwner"]["partyId"],
-                instance_meta_data["id"],
+                party_id,
+                instance_id,
                 instance_client_data_meta_data["id"],
                 report_id,
             )
@@ -115,7 +118,6 @@ def main() -> None:
                     f"Status: {created_instance.status_code} - "
                     f"Error message: {error_msg}"
                 )
-
 
 if __name__ == "__main__":
     main()

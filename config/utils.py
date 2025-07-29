@@ -10,7 +10,6 @@ import json
 from datetime import datetime, timezone
 import isodate
 from .type_dict_structure import DataModel
-from .config_loader import APIConfig
 
 
 class PrefillValidationError(Exception):
@@ -310,7 +309,7 @@ def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Opti
         return oppstart.get("ForventetSluttdato")
 
 
-def create_payload(org_number: str, dato: str, api_config: APIConfig, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
+def create_payload(org_number: str, dato: str, api_config, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
     instance_data = {
             "appId": f"digdir/{api_config.app_config.app_name}",
             "instanceOwner": {
@@ -333,3 +332,8 @@ def create_payload(org_number: str, dato: str, api_config: APIConfig, prefill_da
             ),
         }
     return files 
+
+
+def split_party_instance_id(party_instance_id: str) -> Tuple[str]:
+     party_id, instance_id = party_instance_id.split("/")
+     return party_id, instance_id
