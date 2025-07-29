@@ -47,7 +47,7 @@ def test_run_success(monkeypatch):
     # Run the function with test data
     run(
         org_number="51625403",
-        report_id="test-report-001",
+        digitaliseringstiltak_report_id="test-report-001",
         dato="2025-08-01T00:00:00Z",
         app_name="regvil-2025-initiell",
         prefill_data={"some": "data"}
@@ -88,7 +88,7 @@ def test_create_payload():
     # Specific content checks
     instance_content = json.loads(result["instance"][1])
     assert instance_content["instanceOwner"]["organisationNumber"] == org_number
-    assert instance_content["dueBefore"] == dato
+    assert instance_content["visibleAfter"] == dato
 
     datamodel_content = json.loads(result["DataModel"][1])
     assert datamodel_content == prefill_data

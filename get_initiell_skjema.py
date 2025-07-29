@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 from pathlib import Path
@@ -13,14 +13,13 @@ from config.config_loader import load_full_config
 
 load_dotenv()
 
-def is_valid_instance(meta_data: dict, tag_expected: str) -> bool:
+def is_valid_instance(meta_data: dict) -> bool:
     if meta_data:
         return (
-            meta_data.get("tags") == [tag_expected] and
             meta_data.get("createdBy") != meta_data.get("lastChangedBy")
         )
     else:
-        False
+        return False
 
 def write_to_json(data: Dict[str, Any], path_to_folder: Path, filename: str) -> None:
     with open(path_to_folder / filename, 'w', encoding='utf-8') as file:
@@ -31,7 +30,7 @@ client = SecretClient(vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), cred
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
+def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str], str]:
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
@@ -41,34 +40,32 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
 
 
     digitaliseringstiltak_report_id = get_reportid_from_blob(f"{os.getenv('ENV')}/event_log/",app_name, instance_id, config.app_config.tag["tag_instance"])
-    digitaliseringstiltak_report_id = "abc"
 
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
     if not instance_meta:
-        logging.error(f"Failed to fetch instance: {instance_meta.status_code if instance_meta else 'No response'}")
-        return None
+        logging.error(f"Failed to fetch party id: {party_id} instance id: {instance_id}")
+        return {}, 502
+    if instance_meta.status_code not in [200, 201]:
+        return {}, instance_meta.status_code
+
     try:
         instance_meta_info = instance_meta.json()
-        meta_data = get_meta_data_info(instance_meta_info.get("data"))
+    except ValueError:
+        logging.error(f"Error processing party id: {party_id}, instance id {instance_id}")
+        return {}, 502
+    meta_data = get_meta_data_info(instance_meta_info.get("data"))
 
-        if is_valid_instance(meta_data, config.app_config.tag["tag_instance"]):
-            instance_data = regvil_instance_client.get_instance_data(
+    if is_valid_instance(meta_data):
+        instance_data = regvil_instance_client.get_instance_data(
                     party_id,
                     instance_id,
                     meta_data.get("id")
                 )
 
-            report_data = instance_data.json()           
+        report_data = instance_data.json()           
 
-            response = regvil_instance_client.tag_instance_data(
-                    party_id,
-                    instance_id,
-                    meta_data.get("id"),
-                    config.app_config.tag["tag_download"]
-                )
-            # Log and save instances to disk
-            tracker.logging_instance(
+        tracker.logging_instance(
                     instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
                     digitaliseringstiltak_report_id,
@@ -77,12 +74,9 @@ def run(party_id: str, instance_id: str, app_name: str) -> Dict[str, str]:
                     config.app_config.tag["tag_download"]
                 )
             
-            logging.info(f"Successfully downloaded and tagged: {instance_id} (HTTP {response.status_code})")
-            return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data} #Write logic to get dato out of download
+        logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
+        return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data}, 200
 
-        else:
-            logging.warning(f"Already downloaded or invalid tags for: {digitaliseringstiltak_report_id} - {instance_id}")
-            return None
-    except Exception as e:
-            logging.exception(f"Error processing party id: {party_id}, instance id {instance_id}")
-            raise
+    else:
+        logging.warning(f"Already downloaded: {app_name} InstanceId: {instance_id} ReportId: {digitaliseringstiltak_report_id}")
+        return {}, 204

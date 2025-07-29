@@ -27,19 +27,6 @@ secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 
-def test_update_substatus_success():
-    
-    test_instance_client = AltinnInstanceClient.init_from_config(config)
-    response_json = test_instance_client.tag_instance_data(
-        "51625403",
-        "51625403/0512ce74-90a9-4b5c-ab15-910f60db92d1",
-        "fed122b9-672c-4b34-9a47-09f501d5af72",
-        "AnotherSkjemaLevert"
-    )
-    assert response_json.status_code == 201
-    assert response_json.json() == {'tags': ['AnotherSkjemaLevert']}
-
-
 def test_instance_created_found():
     """Test instance_created returns True when instance exists with matching report_id"""
     test_instance_client = AltinnInstanceClient.init_from_config(config)

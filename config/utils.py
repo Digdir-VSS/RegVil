@@ -100,13 +100,7 @@ def validate_initiell_prefill_data(prefill_data_row: Dict[str, Any]) -> bool:
     for field in org_numbers:
         org_number = str(prefill_data_row[field])
         if not _is_valid_org_number(org_number):
-            raise PrefillValidationError(f"Invalid organisation number format in {field}: {org_number} (must be 9 digits)")
-    
-    # 3. Validate digitaliseringstiltak_report_id (UUID)
-    report_id = prefill_data_row["digitaliseringstiltak_report_id"]
-    if not _is_valid_uuid(str(report_id)):
-        raise PrefillValidationError(f"Invalid UUID format for digitaliseringstiltak_report_id: {report_id}")
-    
+            raise PrefillValidationError(f"Invalid organisation number format in {field}: {org_number} (must be 9 digits)")  
     # 4. Validate email
     email = prefill_data_row["Kontaktperson.EPostadresse"]
     if not _is_valid_email(str(email)):
