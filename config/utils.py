@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 import isodate
 from .type_dict_structure import DataModel
 
-
 class PrefillValidationError(Exception):
     pass
 
@@ -262,6 +261,17 @@ def blob_directory_exists(directory: str) -> bool:
         return False
 
 
+def to_utc_aware(dt_str: str) -> datetime:
+    # Replace 'Z' with '+00:00' for ISO compliance
+    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+
+    # If no tzinfo, make it explicitly UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    # Normalize to UTC (important for comparisons)
+    return dt.astimezone(timezone.utc)
+
 def get_today_date():
     return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
@@ -270,18 +280,14 @@ def check_date_before(reference_date: str, compare_date: str):
         raise ValueError("Reference date string is empty")
     if not compare_date:
         raise ValueError("Comapre date string is empty")
-    ref = datetime.fromisoformat(reference_date)
-    comp = datetime.fromisoformat(compare_date)
-        # Make both timezone-aware if needed
-    ref = ref.replace(tzinfo=timezone.utc)
-    comp = comp.replace(tzinfo=timezone.utc)
+    ref = to_utc_aware(reference_date)
+    comp = to_utc_aware(compare_date)
     return ref <comp
 
 def add_time_delta(base_date_str: str, time_delta_str: str):
     if not time_delta_str:
         raise ValueError("Timedelta string is empty")
-    base_date = datetime.fromisoformat(base_date_str)
-    base_date = base_date.replace(tzinfo=timezone.utc)
+    base_date = to_utc_aware(base_date_str)
     time_delta = isodate.parse_duration(time_delta_str)
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
