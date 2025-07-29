@@ -17,7 +17,6 @@ client = SecretClient(
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 def main() -> None:
-    logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
     regvil_instance_client = AltinnInstanceClient.init_from_config(
@@ -25,16 +24,14 @@ def main() -> None:
     )
     answer = input("Write DELETE to delete all instances: ")
     if answer != "DELETE":
-        logging.info("Skipping deletion of all instances")
         print("Skipping deletion of all instances")
         return
     else:
-        logging.info("Deleting all instances")
         print("Deleting all instances")
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
-            logging.info(f"Deleting instance {instance_id} for party {partyID}")
+            print(f"Deleting instance {instance_id} for party {partyID}")
             instance = regvil_instance_client.get_instance(partyID, instance_id)
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
@@ -43,9 +40,9 @@ def main() -> None:
                 _ = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag)
             instance_deleted = regvil_instance_client.delete_instance(partyID, instance_id)
             if instance_deleted.status_code in [200,201,204]:
-                logging.info(f"Successfully deleted instance {instance_id}")
+                print(f"Successfully deleted instance {instance_id}")
             else:
-                logging.error(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
+                print(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
