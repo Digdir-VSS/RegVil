@@ -88,12 +88,11 @@ def main() -> None:
                 config.app_config.tag["tag_instance"],
             )
 
-
             tag_result = regvil_instance_client.tag_instance_data(
                 instance_meta_data["instanceOwner"]["partyId"],
                 instance_meta_data["id"],
                 instance_client_data_meta_data["id"],
-                config.app_config.tag["tag_instance"],
+                report_id,
             )
             if tag_result.status_code == 201:
                 logging.info(f"Successfully tagged instance for org {org_number}")

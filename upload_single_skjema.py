@@ -90,7 +90,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
                 party_id,
                 instance_id,
                 instance_data_meta_data["id"],
-                api_config.app_config.tag["tag_instance"],
+                digitaliseringstiltak_report_id,
             )
     if tag_result.status_code == 201:
             logging.info(f"Successfully tagged instance for org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
