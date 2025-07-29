@@ -43,12 +43,13 @@ def main():
     token = exchange_token(maskinport_client ,secret_value,  maskinporten_endpoint)
 
     endpoint = "https://regvil-app.lemonforest-e288550d.norwayeast.azurecontainerapps.io/httppost"
-    source_filter = "https://digdir.apps.tt02.altinn.no/digdir/regvil-2025-initiell"
-    type_filter = "app.instance.process.completed"
-    response = subscribe_to_altinn_events(token, endpoint, source_filter, type_filter)
-    print("Status Code:", response.status_code)
-    print("Response:", response.text)
-    response.raise_for_status()
+    for app_name in ["regvil-2025-oppstart", "regvil-2025-status", "regvil-2025-slutt"]:
+        source_filter = f"https://digdir.apps.tt02.altinn.no/digdir/{app_name}"
+        type_filter = "app.instance.process.completed"
+        response = subscribe_to_altinn_events(token, endpoint, source_filter, type_filter)
+        print("Status Code:", response.status_code)
+        print("Response:", response.text)
+        response.raise_for_status()
 
 if __name__ == "__main__":
     main()
