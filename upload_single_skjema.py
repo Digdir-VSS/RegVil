@@ -11,7 +11,7 @@ from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.type_dict_structure import DataModel
 from config.config_loader import load_full_config
-from config.utils import create_payload
+from config.utils import create_payload, split_party_instance_id
 
 load_dotenv()
 
@@ -22,13 +22,11 @@ client = SecretClient(
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def split_party_instance_id(party_instance_id: str) -> Tuple[str]:
-     party_id, instance_id = party_instance_id.split("/")
-     return party_id, instance_id
 
 def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
 
     logging.info("Starting Altinn survey sending instance processing")
+    logging.info(f"Instance will be visible after {dato}")
     path_to_config_folder = Path(__file__).parent / "config_files"
     api_config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
