@@ -10,7 +10,7 @@ import os
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-from config.utils import read_blob
+from config.utils import read_blob, create_payload
 
 load_dotenv()
 
@@ -20,12 +20,6 @@ client = SecretClient(
 )
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
-
-
-def load_in_json(path_to_json_file: Path) -> Any:
-    with open(path_to_json_file, "r", encoding="utf-8") as file:
-        return json.load(file)
-
 
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
@@ -59,32 +53,7 @@ def main() -> None:
         logging.info(
             f"Creating new instance for org {org_number} and report id {report_id}"
         )
-        instance_data = {
-            "appId": f"digdir/{config.app_config.app_name}",
-            "instanceOwner": {
-                "personNumber": None,
-                "organisationNumber": data_model["Prefill"]["AnsvarligVirksomhet"][
-                    "Organisasjonsnummer"
-                ],
-            },
-            "dueBefore": config.app_config.dueBefore,
-            "visibleAfter": config.app_config.visibleAfter,
-        }
-
-
-        files = {
-            "instance": (
-                "instance.json",
-                json.dumps(instance_data, ensure_ascii=False),
-                "application/json",
-            ),
-            "DataModel": (
-                "datamodel.json",
-                json.dumps(data_model, ensure_ascii=False),
-                "application/json",
-            ),
-        }
-
+        files = create_payload(org_number, config.app_config.visibleAfter, config, data_model)
         created_instance = regvil_instance_client.post_new_instance(files)
 
         if created_instance.status_code == 201:

@@ -1,6 +1,6 @@
 import re
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 import logging
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential, EnvironmentCredential
@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timezone
 import isodate
 from .type_dict_structure import DataModel
+from .config_loader import APIConfig
 
 
 class PrefillValidationError(Exception):
@@ -309,3 +310,26 @@ def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Opti
         return oppstart.get("ForventetSluttdato")
 
 
+def create_payload(org_number: str, dato: str, api_config: APIConfig, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
+    instance_data = {
+            "appId": f"digdir/{api_config.app_config.app_name}",
+            "instanceOwner": {
+                "personNumber": None,
+                "organisationNumber": org_number,
+            },
+            "dueBefore": None,
+            "visibleAfter": dato,
+        }
+    files = {
+            "instance": (
+                "instance.json",
+                json.dumps(instance_data, ensure_ascii=False),
+                "application/json",
+            ),
+            "DataModel": (
+                "datamodel.json",
+                json.dumps(prefill_data, ensure_ascii=False),
+                "application/json",
+            ),
+        }
+    return files 
