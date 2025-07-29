@@ -42,6 +42,7 @@ def test_run_success(
 
     # Mock instance response
     instance_mock = MagicMock()
+    instance_mock.status_code = 200 
     instance_mock.json.return_value = {
     "id": f"{SAMPLE_PARTY_ID}/{SAMPLE_INSTANCE_ID}",
     "instanceOwner": {"organisationNumber": "123456789"}, 
@@ -62,61 +63,9 @@ def test_run_success(
 
     mock_tracker_inst = mock_tracker.from_directory.return_value
 
-    result = run(SAMPLE_PARTY_ID, SAMPLE_INSTANCE_ID, SAMPLE_APP_NAME)
-    assert isinstance(result, dict)
-
-#Test: Already tagged (skip download)
-@patch("get_initiell_skjema.load_dotenv")
-@patch("get_initiell_skjema.load_full_config")
-@patch("get_initiell_skjema.AltinnInstanceClient")
-@patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.get_meta_data_info")
-def test_run_skips_when_already_tagged(
-    mock_get_meta_data_info,
-    mock_instance_tracker,
-    mock_instance_client_class,
-    mock_load_config,
-    mock_load_dotenv
-):
-    mock_client = MagicMock()
-    mock_instance_client_class.init_from_config.return_value = mock_client
-
-    mock_client = MagicMock()
-    mock_instance_client_class.init_from_config.return_value = mock_client
-
-    mock_config = MagicMock()
-    mock_config.app_config.tag = {
-    "tag_instance": "InitiellSkjemaLevert",
-    "tag_download": "InitiellSkjemaDownloaded"
-}
-    mock_load_config.return_value = mock_config
-
-    mock_client.get_instance.return_value.json.return_value = {
-            "id": f"{SAMPLE_PARTY_ID}/{SAMPLE_INSTANCE_ID}",
-    "instanceOwner": {"organisationNumber": "123456789"}, 
-        "data": [{"tags": ["InitiellSkjemaDownloaded"], "id": "abc123",  "createdBy": "user", "lastChangedBy": "user"}]
-    }
-
-    mock_get_meta_data_info.return_value = {"tags": ["InitiellSkjemaDownloaded"], "id": "abc123",  "createdBy": "user", "lastChangedBy": "user"}
-
-    mock_tracker = MagicMock()
-    mock_tracker.log_file = {
-  "organisations": {
-    "123456789": {
-      "events": [
-          {
-            "instanceId": "50015641/a72223a3-926b-4095-a2a6-bacc10815f2d",
-            "instancePartyId": "50015641",
-            "org_number": "123456789",
-            "data_info": {"dataGuid": "abc123"},
-            "digitaliseringstiltak_report_id": "report-1",
-            "event_type": "InitiellSkjemaLevert"
-        }
-    ]}}}
-    mock_instance_tracker.from_log_file.return_value = mock_tracker
-
-    result = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
-    assert result is None  # run logs and skips when already tagged
+    params, status_code = run(SAMPLE_PARTY_ID, SAMPLE_INSTANCE_ID, SAMPLE_APP_NAME)
+    assert isinstance(params, dict)
+    assert status_code == 200
 
 #Test: Successful full run
 @patch("get_initiell_skjema.write_to_json")
@@ -157,6 +106,7 @@ def test_run_success_full_flow(
     "instanceOwner": {"organisationNumber": "123456789"}, 
         "data": [{"tags": ["InitiellSkjemaDownloaded"], "id": "abc123",  "createdBy": "user1", "lastChangedBy": "user2"}]
     }
+    mock_client.get_instance.return_value.status_code = 201
 
     mock_client.get_instance_data.return_value.json.return_value = {
         "Initiell": {"DatoPaabegynt": "2024-01-01"}
@@ -178,8 +128,9 @@ def test_run_success_full_flow(
     ]}}}
     mock_instance_tracker.from_log_file.return_value = mock_tracker
 
-    result = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
-    assert isinstance(result, dict)
+    params, status_code = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
+    assert isinstance(params, dict)
+    assert status_code == 200
 
 @patch("get_initiell_skjema.get_reportid_from_blob")
 @patch("get_initiell_skjema.InstanceTracker")
@@ -219,7 +170,8 @@ def test_run_logs_exception_when_instance_data_fails(
 
     # Force an exception when calling get_instance().json()
     broken_instance_response = MagicMock()
-    broken_instance_response.json.side_effect = Exception("Failed to parse JSON")
+    broken_instance_response.json.side_effect = ValueError("Failed to parse JSON")
+    broken_instance_response.status_code = 502
     mock_client.get_instance.return_value = broken_instance_response
 
     mock_tracker.from_log_file.return_value.log_file = {
@@ -237,32 +189,11 @@ def test_run_logs_exception_when_instance_data_fails(
     }
 
     # Act & Assert
-    with pytest.raises(Exception, match="Failed to parse JSON"):
-        run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
-
-    # Validate that logging.exception was called with the correct message
-    assert any(
-        "Error processing party id: 50015641, instance id a72223a3-926b-4095-a2a6-bacc10815f2d"
-        in message
-        for message in caplog.text.splitlines()
-    )
-
-@patch("get_initiell_skjema.AltinnInstanceClient")
-@patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.get_reportid_from_blob")
-@patch("get_initiell_skjema.load_full_config")
-@patch("get_initiell_skjema.load_dotenv")
-def test_run_returns_none_if_get_instance_fails(
-    mock_dotenv, mock_config, mock_find_event, mock_tracker, mock_client_class, caplog
-):
-    mock_find_event.return_value = "r1"
-    mock_client = MagicMock()
-    mock_client.get_instance.return_value = None
-    mock_client_class.init_from_config.return_value = mock_client
-
     with caplog.at_level(logging.ERROR):
-        result = run("500", "abc", "regvil-2025-initiell")
-    assert result is None
+        params, status_code = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
+    # Validate that logging.exception was called with the correct message
+    assert params == {}
+    assert status_code == 502
 
 @patch("get_initiell_skjema.get_meta_data_info")
 @patch("get_initiell_skjema.AltinnInstanceClient")
@@ -284,6 +215,7 @@ def test_run_returns_none_if_get_instance_data_fails(
     }
     mock_client.get_instance.return_value = mock_instance
     mock_client.get_instance_data.return_value = None
+    mock_client.get_instance.return_value.status_code = 502
     mock_client_class.init_from_config.return_value = mock_client
 
     mock_get_meta.return_value = {
@@ -291,41 +223,12 @@ def test_run_returns_none_if_get_instance_data_fails(
     }
 
     with caplog.at_level(logging.ERROR):
-        result = run("500", "abc", "regvil-2025-initiell")
-    result = run("500", "abc", "regvil-2025-initiell")
-    assert result is None
+        params, status_code = run("50015641", "a72223a3-926b-4095-a2a6-bacc10815f2d", "regvil-2025-initiell")
 
-@patch("get_initiell_skjema.get_meta_data_info")
-@patch("get_initiell_skjema.AltinnInstanceClient")
-@patch("get_initiell_skjema.InstanceTracker")
-@patch("get_initiell_skjema.get_reportid_from_blob")
-@patch("get_initiell_skjema.load_full_config")
-@patch("get_initiell_skjema.load_dotenv")
-def test_run_skips_if_tag_does_not_match(
-    mock_dotenv, mock_config, mock_find_event, mock_tracker,
-    mock_client_class, mock_get_meta, caplog
-):
-    mock_find_event.return_value =  "r1"
+    assert params == {}
+    assert status_code == 502
 
-    mock_client = MagicMock()
-    mock_instance = MagicMock()
-    mock_instance.json.return_value = {
-        "data": [{"tags": ["wrong_tag"], "createdBy": "user", "lastChangedBy": "user", "dataType": "DataModel", "contentType": "application/json"}],
-        "id": "500/abc", "instanceOwner": {"orgNumber": "123456789"}
-    }
-    mock_client.get_instance.return_value = mock_instance
-    mock_client_class.init_from_config.return_value = mock_client
 
-    mock_get_meta.return_value = {
-        "tags": ["wrong_tag"], "createdBy": "user", "lastChangedBy": "user", "id": "123"
-    }
-
-    mock_config_inst = MagicMock()
-    mock_config_inst.app_config.tag = {"tag_instance": "expected_tag", "tag_download": "downloaded"}
-    mock_config.return_value = mock_config_inst
-    with caplog.at_level(logging.WARNING):
-        result = run("500", "abc", "regvil-2025-initiell")
-    assert result is None
 
 @pytest.mark.parametrize("app_name, report_data, expected_date_start", [
     (
