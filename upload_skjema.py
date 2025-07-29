@@ -2,7 +2,7 @@ from typing import Any
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
 from pathlib import Path
-import json
+import re
 import logging
 from dotenv import load_dotenv
 import os
@@ -10,7 +10,7 @@ import os
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-from config.utils import read_blob
+from config.utils import read_blob, create_payload, split_party_instance_id
 
 load_dotenv()
 
@@ -21,11 +21,8 @@ client = SecretClient(
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-
-def load_in_json(path_to_json_file: Path) -> Any:
-    with open(path_to_json_file, "r", encoding="utf-8") as file:
-        return json.load(file)
-
+def transform_uiid_to_tag(digitaliseringstiltak_report_id: str):
+    return "".join(re.findall(r"[a-zA-Z]+",digitaliseringstiltak_report_id))
 
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
@@ -40,16 +37,16 @@ def main() -> None:
     logging.info(f"Processing {len(test_prefill_data)} organizations")
 
 
-    for prefill_data_row in test_prefill_data:
+    for prefill_data_row in test_prefill_data[0:2]:
         config.app_config.validate_prefill_data(prefill_data_row)
         data_model = config.app_config.get_prefill_data(prefill_data_row)
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
-        report_id = prefill_data_row["digitaliseringstiltak_report_id"]
+        report_id = transform_uiid_to_tag(prefill_data_row["digitaliseringstiltak_report_id"])
 
         logging.info(f"Processing org {org_number}, report {report_id}")
 
         if regvil_instance_client.instance_created(
-            org_number, config.app_config.tag["tag_instance"]
+            org_number, report_id
         ):
             logging.info(
                 f"Skipping org {org_number} and report {report_id}- already in storage"
@@ -59,32 +56,7 @@ def main() -> None:
         logging.info(
             f"Creating new instance for org {org_number} and report id {report_id}"
         )
-        instance_data = {
-            "appId": f"digdir/{config.app_config.app_name}",
-            "instanceOwner": {
-                "personNumber": None,
-                "organisationNumber": data_model["Prefill"]["AnsvarligVirksomhet"][
-                    "Organisasjonsnummer"
-                ],
-            },
-            "dueBefore": config.app_config.dueBefore,
-            "visibleAfter": config.app_config.visibleAfter,
-        }
-
-
-        files = {
-            "instance": (
-                "instance.json",
-                json.dumps(instance_data, ensure_ascii=False),
-                "application/json",
-            ),
-            "DataModel": (
-                "datamodel.json",
-                json.dumps(data_model, ensure_ascii=False),
-                "application/json",
-            ),
-        }
-
+        files = create_payload(org_number, config.app_config.visibleAfter, config, data_model)
         created_instance = regvil_instance_client.post_new_instance(files)
 
         if created_instance.status_code == 201:
@@ -96,7 +68,7 @@ def main() -> None:
             logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
-            party_id, instance_id = instance_meta_data.get("id").split("/")  # Extract instance ID and party ID from json
+            party_id, instance_id = split_party_instance_id(instance_meta_data["id"])
             #New code to handle instance data
             instance_data = regvil_instance_client.get_instance_data(
                 party_id,
@@ -119,12 +91,11 @@ def main() -> None:
                 config.app_config.tag["tag_instance"],
             )
 
-
             tag_result = regvil_instance_client.tag_instance_data(
-                instance_meta_data["instanceOwner"]["partyId"],
-                instance_meta_data["id"],
+                party_id,
+                instance_id,
                 instance_client_data_meta_data["id"],
-                config.app_config.tag["tag_instance"],
+                report_id,
             )
             if tag_result.status_code == 201:
                 logging.info(f"Successfully tagged instance for org {org_number}")
@@ -147,7 +118,6 @@ def main() -> None:
                     f"Status: {created_instance.status_code} - "
                     f"Error message: {error_msg}"
                 )
-
 
 if __name__ == "__main__":
     main()

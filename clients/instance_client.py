@@ -303,3 +303,7 @@ class AltinnInstanceClient:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}?hard=true"
         # return url, self._get_headers("application/json")
         return make_api_call(method="DELETE", url=url, headers=self._get_headers("application/json"))
+    
+    def delete_tag(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None):
+        url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags/{tag}"
+        return make_api_call(method="DELETE", url=url, headers=self._get_headers("application/json"))

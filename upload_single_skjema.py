@@ -10,7 +10,8 @@ import os
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker
 from config.type_dict_structure import DataModel
-from config.config_loader import load_full_config, APIConfig
+from config.config_loader import load_full_config
+from config.utils import create_payload
 
 load_dotenv()
 
@@ -24,36 +25,6 @@ secret_value = secret.value
 def split_party_instance_id(party_instance_id: str) -> Tuple[str]:
      party_id, instance_id = party_instance_id.split("/")
      return party_id, instance_id
-
-def create_payload(org_number: str, dato: str, api_config: APIConfig, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
-    instance_data = {
-            "appId": f"digdir/{api_config.app_config.app_name}",
-            "instanceOwner": {
-                "personNumber": None,
-                "organisationNumber": org_number,
-            },
-            "dueBefore": None,
-            "visibleAfter": dato,
-        }
-    files = {
-            "instance": (
-                "instance.json",
-                json.dumps(instance_data, ensure_ascii=False),
-                "application/json",
-            ),
-            "DataModel": (
-                "datamodel.json",
-                json.dumps(prefill_data, ensure_ascii=False),
-                "application/json",
-            ),
-        }
-    return files 
-     
-
-def load_in_json(path_to_json_file: Path) -> Any:
-    with open(path_to_json_file, "r", encoding="utf-8") as file:
-        return json.load(file)
-
 
 def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
 
@@ -70,7 +41,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     logging.info(f"Processing org {org_number}, report {digitaliseringstiltak_report_id}")
 
     if regvil_instance_client.instance_created(
-        org_number, api_config.app_config.tag["tag_instance"]
+        org_number, digitaliseringstiltak_report_id
         ):
         logging.warning(
                 f"Skipping org {org_number} and report {digitaliseringstiltak_report_id}- already in storage"
@@ -119,7 +90,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
                 party_id,
                 instance_id,
                 instance_data_meta_data["id"],
-                api_config.app_config.tag["tag_instance"],
+                digitaliseringstiltak_report_id,
             )
     if tag_result.status_code == 201:
             logging.info(f"Successfully tagged instance for org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
