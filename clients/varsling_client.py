@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 from auth.exchange_token_funcs import exchange_token 
 from clients.instance_client import make_api_call
 from config.config_loader import APIConfig
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 def validate_email(email: str) -> str:
     email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
@@ -58,19 +58,14 @@ class AltinnVarslingClient:
                           recipient_email: str, 
                           subject: str, 
                           body: str, 
-                          send_time: str, 
+                          send_time: str,
+                          appname: str,
                           senders_reference: Optional[str] = None, 
-                          sendingTimePolicy: Optional[str] = "Daytime") -> Dict[str, Any]:
-        
-    # "org_number": instance_meta_info["instanceOwner"]["organisationNumber"], 
-    # "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,
-    # "dato": config.app_config.get_date(report_data), 
-    # "app_name": config.workflow_dag.get_next(app_name), 
-    # "prefill_data": report_data
+                          sendingTimePolicy: Optional[str] = "Anytime") -> Dict[str, Any]:
 
         idempotency_id = str(uuid.uuid4())
         if not senders_reference:
-            senders_reference = f"{idempotency_id}-notif"
+            senders_reference = f"{idempotency_id}-{appname}"
         
         if not subject or not subject.strip():
             raise ValueError("Subject must not be empty")
@@ -78,8 +73,11 @@ class AltinnVarslingClient:
         if not body or not body.strip():
             raise ValueError("Body must not be empty")
         if not send_time:
-            send_time = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
-
+            now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
+            dt = datetime.fromisoformat(now)
+            dt_plus_10 = dt + timedelta(minutes=5)
+            send_time = dt_plus_10.isoformat(timespec="microseconds").replace("+00:00", "Z")
+            
         payload = {
             "sendersReference": senders_reference,
             "requestedSendTime": send_time,
