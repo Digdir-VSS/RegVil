@@ -85,7 +85,7 @@ def main() -> None:
             tracker.logging_instance(
                 instance_id,
                 prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"],
-                prefill_data_row["digitaliseringstiltak_report_id"],
+                report_id,
                 instance_meta_data,
                 instance_data_file,
                 config.app_config.tag["tag_instance"],
