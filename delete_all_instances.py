@@ -7,9 +7,7 @@ from dotenv import load_dotenv
 import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
-from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-from config.utils import read_blob
 
 load_dotenv()
 credential = DefaultAzureCredential()
@@ -37,12 +35,17 @@ def main() -> None:
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
             logging.info(f"Deleting instance {instance_id} for party {partyID}")
+            instance = regvil_instance_client.get_instance(partyID, instance_id)
+            instance_meta = instance.json()
+            instance_data = instance_meta.get("data")
+            dataguid = get_meta_data_info(instance_data).get("id")
+            for tag in ["InitiellSkjemaLevert", "InitiellSkjemaDownloaded", "OppstartSkjemaLevert", "OppstartSkjemaDownloaded"]:
+                _ = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag)
             instance_deleted = regvil_instance_client.delete_instance(partyID, instance_id)
             if instance_deleted.status_code in [200,201,204]:
                 logging.info(f"Successfully deleted instance {instance_id}")
             else:
                 logging.error(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
-            
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
