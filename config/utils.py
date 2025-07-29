@@ -270,12 +270,18 @@ def check_date_before(reference_date: str, compare_date: str):
         raise ValueError("Reference date string is empty")
     if not compare_date:
         raise ValueError("Comapre date string is empty")
-    return datetime.fromisoformat(reference_date) < datetime.fromisoformat(compare_date)
+    ref = datetime.fromisoformat(reference_date)
+    comp = datetime.fromisoformat(compare_date)
+        # Make both timezone-aware if needed
+    ref = ref.replace(tzinfo=timezone.utc)
+    comp = comp.replace(tzinfo=timezone.utc)
+    return ref <comp
 
 def add_time_delta(base_date_str: str, time_delta_str: str):
     if not time_delta_str:
         raise ValueError("Timedelta string is empty")
     base_date = datetime.fromisoformat(base_date_str)
+    base_date = base_date.replace(tzinfo=timezone.utc)
     time_delta = isodate.parse_duration(time_delta_str)
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
