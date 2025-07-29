@@ -37,7 +37,7 @@ def main() -> None:
     logging.info(f"Processing {len(test_prefill_data)} organizations")
 
 
-    for prefill_data_row in test_prefill_data[0:2]:
+    for prefill_data_row in test_prefill_data:
         config.app_config.validate_prefill_data(prefill_data_row)
         data_model = config.app_config.get_prefill_data(prefill_data_row)
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
