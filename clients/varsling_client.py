@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any
 from auth.exchange_token_funcs import exchange_token 
 from clients.instance_client import make_api_call
 from config.config_loader import APIConfig
+from datetime import datetime, timezone
 
 def validate_email(email: str) -> str:
     email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
@@ -17,7 +18,7 @@ def validate_email(email: str) -> str:
 
 
 class AltinnVarslingClient:
-    def __init__(self, base_url: str, maskinport_client_id: str, maskinport_kid: str, maskinport_scope: str, secret_value: str, maskinporten_endpoint: str):
+    def __init__(self, base_url: str, maskinport_client_id: str, maskinport_kid: str, maskinport_scope: str, secret_value: str, maskinporten_endpoint: str, appname: str):
         self.base_url = base_url
         self.secret_value = secret_value
         self.maskinport_client_id = maskinport_client_id
@@ -25,6 +26,7 @@ class AltinnVarslingClient:
         self.maskinport_scope = maskinport_scope
         self.secret_value = secret_value
         self.maskinporten_endpoint = maskinporten_endpoint
+        self.appname = appname
     
     @classmethod
     def init_from_config(cls, api_config: APIConfig) -> AltinnVarslingClient:
@@ -35,6 +37,7 @@ class AltinnVarslingClient:
             maskinport_scope=api_config.maskinporten_config_varsling.scope,
             secret_value=api_config.secret_value,
             maskinporten_endpoint=api_config.maskinporten_endpoint,
+            appname=api_config.app_config.app_name
         )
 
     def _get_headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
@@ -51,7 +54,20 @@ class AltinnVarslingClient:
             headers["Content-Type"] = content_type
         return headers
 
-    def send_notification(self, recipient_email: str, subject: str, body: str, senders_reference: Optional[str] = None, sendingTimePolicy: Optional[str] = "Daytime") -> Dict[str, Any]:
+    def send_notification(self, 
+                          recipient_email: str, 
+                          subject: str, 
+                          body: str, 
+                          send_time: str, 
+                          senders_reference: Optional[str] = None, 
+                          sendingTimePolicy: Optional[str] = "Daytime") -> Dict[str, Any]:
+        
+    # "org_number": instance_meta_info["instanceOwner"]["organisationNumber"], 
+    # "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,
+    # "dato": config.app_config.get_date(report_data), 
+    # "app_name": config.workflow_dag.get_next(app_name), 
+    # "prefill_data": report_data
+
         idempotency_id = str(uuid.uuid4())
         if not senders_reference:
             senders_reference = f"{idempotency_id}-notif"
@@ -61,9 +77,12 @@ class AltinnVarslingClient:
 
         if not body or not body.strip():
             raise ValueError("Body must not be empty")
+        if not send_time:
+            send_time = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
         payload = {
             "sendersReference": senders_reference,
+            "requestedSendTime": send_time,
             "idempotencyId": idempotency_id,
             "recipient": {
                 "recipientEmail": {
@@ -72,7 +91,7 @@ class AltinnVarslingClient:
                         "subject": subject,
                         "body": body,
                         "contentType": "Plain",
-                        "sendingTimePolicy": "Anytime"
+                        "sendingTimePolicy": sendingTimePolicy
                     }
                 }
             }
