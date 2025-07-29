@@ -70,7 +70,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     logging.info(f"Processing org {org_number}, report {digitaliseringstiltak_report_id}")
 
     if regvil_instance_client.instance_created(
-        org_number, api_config.app_config.tag["tag_instance"]
+        org_number, digitaliseringstiltak_report_id
         ):
         logging.warning(
                 f"Skipping org {org_number} and report {digitaliseringstiltak_report_id}- already in storage"

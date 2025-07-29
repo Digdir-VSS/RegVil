@@ -49,7 +49,7 @@ def main() -> None:
         logging.info(f"Processing org {org_number}, report {report_id}")
 
         if regvil_instance_client.instance_created(
-            org_number, config.app_config.tag["tag_instance"]
+            org_number, report_id
         ):
             logging.info(
                 f"Skipping org {org_number} and report {report_id}- already in storage"
