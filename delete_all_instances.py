@@ -30,6 +30,10 @@ def main() -> None:
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
+<<<<<<< HEAD
+=======
+            print(f"Deleting instance {instance_id} for party {partyID}")
+>>>>>>> bf24d3f (remove logging)
             instance = regvil_instance_client.get_instance(partyID, instance_id)
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
@@ -51,7 +55,10 @@ def main() -> None:
                 print(f"Successfully deleted instance {instance_id}")
             else:
                 print(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
+<<<<<<< HEAD
             print("=====================\n")
+=======
+>>>>>>> bf24d3f (remove logging)
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
