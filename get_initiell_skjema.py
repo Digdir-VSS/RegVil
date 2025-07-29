@@ -47,7 +47,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
         logging.error(f"Failed to fetch party id: {party_id} instance id: {instance_id}")
         return {}, 502
     if instance_meta.status_code not in [200, 201]:
-        return {}, str(instance_meta.status_code)
+        return {}, instance_meta.status_code
 
     try:
         instance_meta_info = instance_meta.json()
