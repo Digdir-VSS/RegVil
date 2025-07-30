@@ -30,22 +30,22 @@ def main():
     varsling_client = AltinnVarslingClient.init_from_config(config)
     test_prefill_data = read_blob(f"{env}/test_virksomheter_prefill_with_uuid.json")
     
-    for prefill_data_row in test_prefill_data:
+    for prefill_data_row in test_prefill_data[2:]:
         config.app_config.validate_prefill_data(prefill_data_row)
         recipient_email = prefill_data_row["Kontaktperson.EPostadresse"]
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
         report_id = prefill_data_row["digitaliseringstiltak_report_id"]
         email_subject = config.app_config.emailSubject
         email_body = config.app_config.emailBody
-        send_time = config.app_config.visibleAfter
-        if send_time.replace("Z","+00:00") < datetime.now().isoformat(timespec="microseconds"):
+        send_time = datetime.fromisoformat(config.app_config.visibleAfter)
+        if send_time < datetime.now(timezone.utc):
             now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
             dt = datetime.fromisoformat(now)
-            dt_plus_10 = dt + timedelta(minutes=5)
-            send_time = dt_plus_10.isoformat(timespec="microseconds").replace("+00:00", "Z")
+            send_time = dt + timedelta(minutes=5)
+        send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
 
         response = varsling_client.send_notification(
-        recipient_email=recipient_email,
+        recipient_email="ignacio.cuervo.torre@digdir.no",
         subject = email_subject,
         body=email_body,
         send_time=send_time,
@@ -68,9 +68,9 @@ def main():
             logging.info(f"Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
         else:
             logging.warning(f"Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
-            return 206
+        break
     logging.info(f"Successfully send out all notifications")
-    return 200
+
 
 if __name__ == "__main__":
     main()

@@ -30,8 +30,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     org_name = prefill_data.get("Initiell").get("AnsvarligVirksomhet").get("Navn")  
     email_subject = config.app_config.emailSubject
     email_body = config.app_config.emailBody
-    send_time = dato
-    if send_time.replace("Z","+00:00") < datetime.now().isoformat(timespec="microseconds"):
+    send_time = datetime.fromisoformat(dato)
+    if send_time < datetime.now(timezone.utc):
         now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
         dt = datetime.fromisoformat(now)
         dt_plus_10 = dt + timedelta(minutes=5)
