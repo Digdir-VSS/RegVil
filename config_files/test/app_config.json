@@ -8,7 +8,9 @@
     "tag": {
       "tag_instance": "InitiellSkjemaLevert",
       "tag_download": "InitiellSkjemaDownloaded"
-    }
+    },
+    "emailSubject": "Rapportering for digitaliseringsstrategi",
+    "emailBody": "Hei, du har nå tilgang til initiell rapportering for digitaliseringsstrategier. Vennligst logg inn i Altinn for å levere skjemaen."
   },
   "regvil-2025-oppstart": {
     "app_name": "regvil-2025-oppstart",
@@ -19,7 +21,9 @@
     "tag": {
       "tag_instance": "OppstartSkjemaLevert",
       "tag_download": "OppstartSkjemaDownloaded"
-    }
+    },
+    "emailSubject": null,
+    "emailBody": null
   },
   "regvil-2025-status": {
     "app_name": "regvil-2025-status",
@@ -30,7 +34,9 @@
     "tag": {
       "tag_instance": "StatusSkjemaLevert",
       "tag_download": "StatusSkjemaDownloaded"
-    }
+    },
+    "emailSubject": null,
+    "emailBody": null
   },
   "regvil-2025-slutt": {
     "app_name": "regvil-2025-slutt",
@@ -41,6 +47,8 @@
     "tag": {
       "tag_instance": "SluttSkjemaLevert",
       "tag_download": "SluttSkjemaDownloaded"
-    }
+    },
+    "emailSubject": null,
+    "emailBody": null
   }
 }

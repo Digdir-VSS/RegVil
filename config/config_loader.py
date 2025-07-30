@@ -55,6 +55,8 @@ class APPConfig:
     visibleAfter: str | None = None
     timedelta_visibleAfter: str | None = None
     timedelta_dueBefore: str | None = None
+    emailSubject: str | None = None
+    emailBody: str | None = None
 
     @classmethod
     def app_name(cls, app_name: str) -> "APPConfig":

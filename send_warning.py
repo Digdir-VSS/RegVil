@@ -2,15 +2,14 @@ from typing import Any, Dict
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential 
 from pathlib import Path
-import json
 import logging
 from dotenv import load_dotenv
 import os
-
+from config.type_dict_structure import DataModel
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-
+from datetime import datetime, timezone, timedelta
 load_dotenv()
 
 credential = DefaultAzureCredential()
@@ -20,30 +19,41 @@ client = SecretClient(
 secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
-    with open(path_to_json_file, 'r', encoding='utf-8') as file:
-        return json.load(file)
 
-def main() -> None:
-    logging.info("Starting Altinn survey sending instance processing")
+def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
+    logging.info("Starting sending notifications for {app_name}")
     path_to_config_folder = Path(__file__).parent / "config_files"
-    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", "test")
-
+    config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
     varsling_client = AltinnVarslingClient.init_from_config(config)
-    recipient_email = "matthias.boeker@digdir.no"
+    recipient_email = prefill_data.get("Initiell").get("Kontaktperson").get("EPostadresse")
+    org_name = prefill_data.get("Initiell").get("AnsvarligVirksomhet").get("Navn")  
+    email_subject = config.app_config.emailSubject
+    email_body = config.app_config.emailBody
+    send_time = datetime.fromisoformat(dato)
+    if send_time < datetime.now(timezone.utc):
+        now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
+        dt = datetime.fromisoformat(now)
+        send_time = dt + timedelta(minutes=5)
+    send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
     response = varsling_client.send_notification(
-        recipient_email="ignacio.cuervo.torre@digdir.no",
-        subject="Test Varsling Email",
-        body="Hello, this is a test varsling from our integration."
-    )
+        recipient_email=recipient_email,
+        subject = email_subject,
+        body=email_body,
+        send_time=send_time,
+        appname=app_name
+        )
 
     if response.status_code == 201:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
-        status = varsling_client.get_shipment_status(shipment_id)
         tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
-        tracker.logging_varlsing(org_number="311045407", org_name="TestVirksomhet", digitaliseringstiltak_report_id="abc-def-ghi-jkl-mno-pqr", shipment_id=status.json(), recipientEmail=recipient_email, event_type="Varsling1Send")
-
-if __name__ == "__main__":
-    main()
+        tracker.logging_varlsing(org_number=org_number, org_name=org_name, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
+        logging.info(f"Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
+        return 200
+    else:
+        logging.warning(f"Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}")
+        return 206
+    
+        
