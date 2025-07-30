@@ -1,8 +1,10 @@
 import pytest
 import os
 from pathlib import Path
+from datetime import datetime, timezone
+
 from config.config_loader import load_full_config
-from config.utils import add_time_delta, check_date_before, get_initiell_date, get_oppstart_date, get_status_date
+from config.utils import add_time_delta, check_date_before, get_initiell_date, get_oppstart_date, get_status_date, to_utc_aware
 
 def test_add_time_delta():
     base_date_str = "2025-07-22T12:59:42.6342741Z"
@@ -225,3 +227,23 @@ def test_load_full_config(monkeypatch):
     assert slutt_config.app_config.visibleAfter == None
     assert slutt_config.app_config.visibleAfter == None
 
+
+def test_to_utc_aware_returns_aware_datetime():
+    iso_str = "2025-07-28T15:00:00Z"
+    dt = to_utc_aware(iso_str)
+
+    assert isinstance(dt, datetime)
+    assert dt.tzinfo is not None
+    assert dt.tzinfo.utcoffset(dt) == timezone.utc.utcoffset(dt)
+
+def test_check_date_before_comparison_with_aware_datetimes():
+    earlier = "2025-07-28T14:00:00Z"
+    later = "2025-07-28T15:00:00Z"
+
+    # Should not raise and should return True
+    result = check_date_before(earlier, later)
+    assert result is True
+
+    # Reverse comparison
+    result = check_date_before(later, earlier)
+    assert result is False

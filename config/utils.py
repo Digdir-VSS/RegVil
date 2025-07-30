@@ -2,12 +2,13 @@ import re
 
 from typing import Any, Dict, Optional, Tuple
 import logging
+import pytz
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential, EnvironmentCredential
 from dotenv import load_dotenv
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 import isodate
 from .type_dict_structure import DataModel
 
@@ -262,18 +263,20 @@ def blob_directory_exists(directory: str) -> bool:
 
 
 def to_utc_aware(dt_str: str) -> datetime:
-    # Replace 'Z' with '+00:00' for ISO compliance
-    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    # Accepts ISO 8601 strings like '2025-07-30T08:00:00Z' or '2024-01-31'
+    try:
+        if dt_str.endswith("Z"):
+            dt_str = dt_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(dt_str)
+    except ValueError:
+        raise ValueError(f"Invalid datetime format: {dt_str}")
 
-    # If no tzinfo, make it explicitly UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        return pytz.UTC.localize(dt)
+    return dt.astimezone(pytz.UTC)
 
-    # Normalize to UTC (important for comparisons)
-    return dt.astimezone(timezone.utc)
-
-def get_today_date():
-    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+def get_today_date() -> str:
+    return datetime.now(pytz.UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 def check_date_before(reference_date: str, compare_date: str):
     if not reference_date:
