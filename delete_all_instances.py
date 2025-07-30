@@ -30,23 +30,12 @@ def main() -> None:
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-            print(f"Deleting instance {instance_id} for party {partyID}")
->>>>>>> bf24d3f (remove logging)
-=======
->>>>>>> cb06886 (fix bug delete tag)
-=======
->>>>>>> e4bb5a93a160f4c9eb7643faac18364d7ccc1b74
             instance = regvil_instance_client.get_instance(partyID, instance_id)
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
             print(f"Deleting orgnumber {instance_meta.get('instanceOwner').get('organisationNumber')} instance {instance_id} for party {partyID}")
             dataguid = get_meta_data_info(instance_data).get("id")
             tag = get_meta_data_info(instance_data).get("tags")
-            print(tag)
             if tag:
                 delete_tag = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag[0])
                 print(delete_tag.status_code)
@@ -54,25 +43,12 @@ def main() -> None:
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
             tag = get_meta_data_info(instance_data).get("tags")
-            print(tag)
             
             instance_deleted = regvil_instance_client.delete_instance(partyID, instance_id)
             if instance_deleted.status_code in [200,201,204]:
                 print(f"Successfully deleted instance {instance_id}")
             else:
                 print(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            print("=====================\n")
-=======
->>>>>>> bf24d3f (remove logging)
-=======
-            print("=====================\n")
->>>>>>> cb06886 (fix bug delete tag)
-=======
-            print("=====================\n")
->>>>>>> e4bb5a93a160f4c9eb7643faac18364d7ccc1b74
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
