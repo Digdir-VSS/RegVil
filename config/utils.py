@@ -1,16 +1,16 @@
 import re
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 import logging
+import pytz
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential, EnvironmentCredential
 from dotenv import load_dotenv
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 import isodate
 from .type_dict_structure import DataModel
-
 
 class PrefillValidationError(Exception):
     pass
@@ -262,20 +262,35 @@ def blob_directory_exists(directory: str) -> bool:
         return False
 
 
-def get_today_date():
-    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+def to_utc_aware(dt_str: str) -> datetime:
+    # Accepts ISO 8601 strings like '2025-07-30T08:00:00Z' or '2024-01-31'
+    try:
+        if dt_str.endswith("Z"):
+            dt_str = dt_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(dt_str)
+    except ValueError:
+        raise ValueError(f"Invalid datetime format: {dt_str}")
+
+    if dt.tzinfo is None:
+        return pytz.UTC.localize(dt)
+    return dt.astimezone(pytz.UTC)
+
+def get_today_date() -> str:
+    return datetime.now(pytz.UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 def check_date_before(reference_date: str, compare_date: str):
     if not reference_date:
         raise ValueError("Reference date string is empty")
     if not compare_date:
         raise ValueError("Comapre date string is empty")
-    return datetime.fromisoformat(reference_date) < datetime.fromisoformat(compare_date)
+    ref = to_utc_aware(reference_date)
+    comp = to_utc_aware(compare_date)
+    return ref <comp
 
 def add_time_delta(base_date_str: str, time_delta_str: str):
     if not time_delta_str:
         raise ValueError("Timedelta string is empty")
-    base_date = datetime.fromisoformat(base_date_str)
+    base_date = to_utc_aware(base_date_str)
     time_delta = isodate.parse_duration(time_delta_str)
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
@@ -309,3 +324,31 @@ def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Opti
         return oppstart.get("ForventetSluttdato")
 
 
+def create_payload(org_number: str, dato: str, api_config, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
+    instance_data = {
+            "appId": f"digdir/{api_config.app_config.app_name}",
+            "instanceOwner": {
+                "personNumber": None,
+                "organisationNumber": org_number,
+            },
+            "dueBefore": None,
+            "visibleAfter": dato,
+        }
+    files = {
+            "instance": (
+                "instance.json",
+                json.dumps(instance_data, ensure_ascii=False),
+                "application/json",
+            ),
+            "DataModel": (
+                "datamodel.json",
+                json.dumps(prefill_data, ensure_ascii=False),
+                "application/json",
+            ),
+        }
+    return files 
+
+
+def split_party_instance_id(party_instance_id: str) -> Tuple[str]:
+     party_id, instance_id = party_instance_id.split("/")
+     return party_id, instance_id
