@@ -34,8 +34,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     if send_time < datetime.now(timezone.utc):
         now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
         dt = datetime.fromisoformat(now)
-        dt_plus_10 = dt + timedelta(minutes=5)
-        send_time = dt_plus_10.isoformat(timespec="microseconds").replace("+00:00", "Z")
+        send_time = dt + timedelta(minutes=5)
+    send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
 
     response = varsling_client.send_notification(
         recipient_email=recipient_email,
