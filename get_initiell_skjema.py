@@ -62,9 +62,9 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                     instance_id,
                     meta_data.get("id")
                 )
-
-        report_data = instance_data.json()           
-
+        
+        report_data = instance_data.json()
+        
         tracker.logging_instance(
                     instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
