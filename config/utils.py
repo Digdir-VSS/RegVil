@@ -9,10 +9,6 @@ from dotenv import load_dotenv
 import os
 import json
 from datetime import datetime
-<<<<<<< HEAD
-
-=======
->>>>>>> dev
 import isodate
 from .type_dict_structure import DataModel
 
