@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 from dotenv import load_dotenv
 import os
+import pytz
 from config.type_dict_structure import DataModel
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
@@ -31,8 +32,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     email_subject = config.app_config.emailSubject
     email_body = config.app_config.emailBody
     send_time = datetime.fromisoformat(dato)
-    if send_time < datetime.now(timezone.utc):
-        now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
+    if send_time < datetime.now(pytz.UTC):
+        now = datetime.now(pytz.UTC).isoformat(timespec="microseconds")        
         dt = datetime.fromisoformat(now)
         send_time = dt + timedelta(minutes=5)
     send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")

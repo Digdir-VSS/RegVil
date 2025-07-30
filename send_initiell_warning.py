@@ -6,7 +6,7 @@ import json
 import logging
 from dotenv import load_dotenv
 import os
-
+import pytz
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
@@ -43,33 +43,34 @@ def main():
             dt = datetime.fromisoformat(now)
             send_time = dt + timedelta(minutes=5)
         send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
-
-        response = varsling_client.send_notification(
-        recipient_email="ignacio.cuervo.torre@digdir.no",
-        subject = email_subject,
-        body=email_body,
-        send_time=send_time,
-        appname=config.app_config.app_name
-        )
-        if response.status_code == 201:
-            response_data = response.json()
-            shipment_id = response_data["notification"]["shipmentId"]
-            tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
-            tracker.logging_varlsing(
-                org_number=org_number,
-                org_name=prefill_data_row["AnsvarligVirksomhet.Navn"],
-                app_name=config.app_config.app_name,
-                send_time = send_time,
-                digitaliseringstiltak_report_id=report_id,
-                shipment_id=shipment_id,
-                recipientEmail=recipient_email,
-                event_type="Varsling1Send"
-            ) 
-            logging.info(f"Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
-        else:
-            logging.warning(f"Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
-        break
-    logging.info(f"Successfully send out all notifications")
+        print(datetime.now(pytz.UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"))
+        print(datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z") )
+    #     response = varsling_client.send_notification(
+    #     recipient_email="ignacio.cuervo.torre@digdir.no",
+    #     subject = email_subject,
+    #     body=email_body,
+    #     send_time=send_time,
+    #     appname=config.app_config.app_name
+    #     )
+    #     if response.status_code == 201:
+    #         response_data = response.json()
+    #         shipment_id = response_data["notification"]["shipmentId"]
+    #         tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
+    #         tracker.logging_varlsing(
+    #             org_number=org_number,
+    #             org_name=prefill_data_row["AnsvarligVirksomhet.Navn"],
+    #             app_name=config.app_config.app_name,
+    #             send_time = send_time,
+    #             digitaliseringstiltak_report_id=report_id,
+    #             shipment_id=shipment_id,
+    #             recipientEmail=recipient_email,
+    #             event_type="Varsling1Send"
+    #         ) 
+    #         logging.info(f"Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
+    #     else:
+    #         logging.warning(f"Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
+    #     break
+    # logging.info(f"Successfully send out all notifications")
 
 
 if __name__ == "__main__":
