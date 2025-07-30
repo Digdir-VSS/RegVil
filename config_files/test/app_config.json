@@ -3,15 +3,7 @@
     "app_name": "regvil-2025-initiell",
     "visibleAfter": "2025-07-17T00:00:00Z",
     "dueBefore": "2025-09-01T12:00:00Z",
-<<<<<<< HEAD
-<<<<<<< HEAD
     "timedelta_visibleAfter": "P0M",
-=======
-    "timedelta_visibleAfter": null,
->>>>>>> 00c4239 (TESTING remove time delta)
-=======
-    "timedelta_visibleAfter": "P0M",
->>>>>>> 1d0b637 (replace null with zero)
     "timedelta_dueBefore": null,
     "tag": {
       "tag_instance": "InitiellSkjemaLevert",
@@ -24,18 +16,8 @@
     "app_name": "regvil-2025-oppstart",
     "visibleAfter": null,
     "dueBefore": null,
-<<<<<<< HEAD
-<<<<<<< HEAD
     "timedelta_visibleAfter": "P0M",
     "timedelta_dueBefore": "P0M",
-=======
-    "timedelta_visibleAfter": null,
-    "timedelta_dueBefore": null,
->>>>>>> 00c4239 (TESTING remove time delta)
-=======
-    "timedelta_visibleAfter": "P0M",
-    "timedelta_dueBefore": "P0M",
->>>>>>> 1d0b637 (replace null with zero)
     "tag": {
       "tag_instance": "OppstartSkjemaLevert",
       "tag_download": "OppstartSkjemaDownloaded"
@@ -47,18 +29,8 @@
     "app_name": "regvil-2025-status",
     "visibleAfter": null,
     "dueBefore": null,
-<<<<<<< HEAD
-<<<<<<< HEAD
     "timedelta_visibleAfter": "P0M",
     "timedelta_dueBefore": "P0M",
-=======
-    "timedelta_visibleAfter": null,
-    "timedelta_dueBefore": null,
->>>>>>> 00c4239 (TESTING remove time delta)
-=======
-    "timedelta_visibleAfter": "P0M",
-    "timedelta_dueBefore": "P0M",
->>>>>>> 1d0b637 (replace null with zero)
     "tag": {
       "tag_instance": "StatusSkjemaLevert",
       "tag_download": "StatusSkjemaDownloaded"

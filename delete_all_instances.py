@@ -32,11 +32,14 @@ def main() -> None:
             partyID, instance_id = instance["instanceId"].split("/")
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             print(f"Deleting instance {instance_id} for party {partyID}")
 >>>>>>> bf24d3f (remove logging)
 =======
 >>>>>>> cb06886 (fix bug delete tag)
+=======
+>>>>>>> e4bb5a93a160f4c9eb7643faac18364d7ccc1b74
             instance = regvil_instance_client.get_instance(partyID, instance_id)
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
@@ -60,12 +63,16 @@ def main() -> None:
                 print(f"Failed to delete instance {instance_id}: {instance_deleted.text}")
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             print("=====================\n")
 =======
 >>>>>>> bf24d3f (remove logging)
 =======
             print("=====================\n")
 >>>>>>> cb06886 (fix bug delete tag)
+=======
+            print("=====================\n")
+>>>>>>> e4bb5a93a160f4c9eb7643faac18364d7ccc1b74
         return "All instances deleted successfully"
 
 if __name__ == "__main__":
