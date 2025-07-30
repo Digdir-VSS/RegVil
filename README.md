@@ -54,7 +54,7 @@ az containerapp up --name regvil-app --resource-group regvil-app-resource --envi
 az containerapp show -n regvil-app -g regvil-app-resource
 ```
 
-## 4. Test Docker Image Locally
+###  Test Docker Image Locally
 ```bash
 docker run --env-file .env -p 8080:80 regvildockerregistry.azurecr.io/regvil-app:latest
 ```
