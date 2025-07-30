@@ -42,8 +42,8 @@
     "app_name": "regvil-2025-slutt",
     "visibleAfter": null,
     "dueBefore": null,
-    "timedelta_visibleAfter": null,
-    "timedelta_dueBefore": null,
+    "timedelta_visibleAfter": "P0M",
+    "timedelta_dueBefore": "P0M",
     "tag": {
       "tag_instance": "SluttSkjemaLevert",
       "tag_download": "SluttSkjemaDownloaded"
