@@ -5,3 +5,4 @@ azure-identity
 python-dotenv
 azure.keyvault
 jwcrypto
+pytz
