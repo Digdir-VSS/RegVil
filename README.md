@@ -44,7 +44,19 @@ docker push regvildockerregistry.azurecr.io/<image_name>:<tag>
 az containerapp up --name regvil-app --resource-group regvil-app-resource --environment regvil-app-environment  --image regvildockerregistry.azurecr.io/<image_name>:<tag> --target-port 80 --ingress external --query properties.configuration.ingress.fqdn
 ```
 
-### Deploy Test Docker Image to Azure Container Apps
+## 4. Deploy Test Docker Image to Azure Container Apps
+
+### Get an overview over existing docker images
+```bash
+az acr repository list --name regvildockerregistry --output table
+```
+
+### Pull test docker image
+```bash
+docker pull regvildockerregistry.azurecr.io/regvil-app-test:latest
+```
+
+### Deploy Test Version to Azure Container App
 ```bash
 az containerapp up --name regvil-app --resource-group regvil-app-resource --environment regvil-app-environment  --image regvildockerregistry.azurecr.io/regvil-app-test:latest --target-port 80 --ingress external --query properties.configuration.ingress.fqdn
 ```
@@ -54,7 +66,7 @@ az containerapp up --name regvil-app --resource-group regvil-app-resource --envi
 az containerapp show -n regvil-app -g regvil-app-resource
 ```
 
-###  Test Docker Image Locally
+###  Deploy Docker Image Locally
 ```bash
 docker run --env-file .env -p 8080:80 regvildockerregistry.azurecr.io/regvil-app:latest
 ```
