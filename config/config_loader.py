@@ -5,7 +5,7 @@ import json
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 
-from config.utils import validate_initiell_prefill_data, transform_initiell_data_to_nested_with_prefill, get_status_date, get_initiell_date, get_oppstart_date
+from config.utils import validate_initiell_prefill_data, transform_initiell_data_to_nested_with_prefill, get_status_date, get_initiell_date, get_oppstart_date, get_slutt_date
 
 PREFILL_TRANSFORMERS = {
     "regvil-2025-initiell": transform_initiell_data_to_nested_with_prefill,
@@ -19,6 +19,7 @@ GET_DATES = {
     "regvil-2025-initiell": get_initiell_date,
     "regvil-2025-oppstart": get_oppstart_date,
     "regvil-2025-status": get_status_date,
+    "regvil-2025-slutt": get_slutt_date,
 }
 
 @dataclass
