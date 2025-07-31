@@ -331,6 +331,9 @@ def get_status_date(reported_data: DataModel, time_delta: Optional[str]) -> Opti
     else:
         return oppstart.get("ForventetSluttdato")
 
+def get_slutt_date(reported_data: DataModel, time_delta: Optional[str]) -> Optional[str]:
+    return None
+
 
 def create_payload(org_number: str, dato: str, api_config, prefill_data: DataModel) -> Dict[str, Tuple[str, str, str]]:
     instance_data = {
