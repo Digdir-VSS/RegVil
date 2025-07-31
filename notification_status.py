@@ -31,12 +31,16 @@ def main():
         recieved_blob_name = f"{report_id}_{app_name}_Varsling1Recieved_{shipment_id}.json"
 
         # Check if the Recieved file already exists
-        if not chech_file_exists(directory + recieved_blob_name):
+
+        if not chech_file_exists(recieved_blob_name):
             path_to_config_folder = Path(__file__).parent / "config_files"
             config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
             varsling_client = AltinnVarslingClient.init_from_config(config)
             response = varsling_client.get_shipment_status(shipment_id=shipment_id)
+            if not response:
+                logging.error(f"Failed to get shipment status for {shipment_id} and {report_id[len(directory):]}")
+                continue
             if response.status_code != 200:
                 logging.error(f"Failed to get shipment status for {shipment_id}: {response.text}")
                 continue    

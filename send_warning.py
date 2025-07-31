@@ -45,6 +45,12 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
         send_time=send_time,
         appname=app_name
         )
+    if not response:
+        logging.error(f"Failed to send notification to {org_number} {digitaliseringstiltak_report_id} {app_name}")
+        return 500
+    if response.status_code != 201:
+        logging.error(f"Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}. Status: {response.text}")
+        return response.status_code
 
     if response.status_code == 201:
         response_data = response.json()
