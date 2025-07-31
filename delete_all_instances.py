@@ -19,7 +19,7 @@ secret_value = secret.value
 def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
-    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
+    config = load_full_config(path_to_config_folder, "regvil-2025-slutt", os.getenv("ENV"))
     regvil_instance_client = AltinnInstanceClient.init_from_config(
         config,
     )
@@ -39,8 +39,11 @@ def main() -> None:
             instance_meta = instance.json()
             instance_data = instance_meta.get("data")
             dataguid = get_meta_data_info(instance_data).get("id")
-            for tag in ["InitiellSkjemaLevert", "InitiellSkjemaDownloaded", "OppstartSkjemaLevert", "OppstartSkjemaDownloaded"]:
-                _ = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag)
+            tag = get_meta_data_info(instance_data).get("tags")
+            print(tag)
+            if tag:
+                tag_response = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag[0])
+                print(tag_response.status_code)
             instance_deleted = regvil_instance_client.delete_instance(partyID, instance_id)
             if instance_deleted.status_code in [200,201,204]:
                 logging.info(f"Successfully deleted instance {instance_id}")
