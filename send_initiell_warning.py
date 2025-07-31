@@ -6,7 +6,7 @@ import json
 import logging
 from dotenv import load_dotenv
 import os
-
+import pytz
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
@@ -27,6 +27,7 @@ def main():
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", env)
 
+
     varsling_client = AltinnVarslingClient.init_from_config(config)
     test_prefill_data = read_blob(f"{env}/test_virksomheter_prefill_with_uuid.json")
     
@@ -38,12 +39,11 @@ def main():
         email_subject = config.app_config.emailSubject
         email_body = config.app_config.emailBody
         send_time = datetime.fromisoformat(config.app_config.visibleAfter)
-        if send_time < datetime.now(timezone.utc):
-            now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
+        if send_time < datetime.now(pytz.UTC):
+            now = datetime.now(pytz.UTC).isoformat(timespec="microseconds")        
             dt = datetime.fromisoformat(now)
             send_time = dt + timedelta(minutes=5)
         send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
-
         response = varsling_client.send_notification(
         recipient_email="ignacio.cuervo.torre@digdir.no",
         subject = email_subject,
@@ -51,6 +51,12 @@ def main():
         send_time=send_time,
         appname=config.app_config.app_name
         )
+        if not response:
+            logging.error(f"Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}")
+            continue
+        if response.status_code != 201:
+            logging.error(f"Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}. Status code: {response.text}")
+            continue
         if response.status_code == 201:
             response_data = response.json()
             shipment_id = response_data["notification"]["shipmentId"]

@@ -31,7 +31,7 @@ class InstanceTracker:
         return cls({"organisations": {}}, log_path=path_to_json_dir)
     
       
-    def logging_varlsing(self, org_number: str, org_name: str,app_name: str,send_time: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str):
+    def logging_varlsing(self, org_number: str, org_name: str,app_name: str,send_time: str, digitaliseringstiltak_report_id: str, shipment_id: str, recipientEmail: str, event_type: str, shipment_status: Dict[str, Any] = None):
         if not org_number or not digitaliseringstiltak_report_id:
           logging.warning("Organization number and report ID cannot be empty. Shipment_id: {shipment_id}, org_number: {org_number}, digitaliseringstiltak_report_id: {digitaliseringstiltak_report_id}")
         
@@ -44,8 +44,10 @@ class InstanceTracker:
             "sent_time": send_time,
             "app_name": app_name,
             "shipment_id": shipment_id, 
-            "recipientEmail": recipientEmail
+            "recipientEmail": recipientEmail,
+            "shipment_status": shipment_status
         }
+        
         write_blob(self.log_path+f"{digitaliseringstiltak_report_id}_{app_name}_{event_type}_{shipment_id}.json",instance_log_entry)
 
     def logging_instance(self, instance_id: str,org_number: str, digitaliseringstiltak_report_id: str, instance_meta_data: dict, data_dict: dict ,event_type: str):

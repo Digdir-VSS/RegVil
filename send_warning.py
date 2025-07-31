@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 from dotenv import load_dotenv
 import os
+import pytz
 from config.type_dict_structure import DataModel
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
@@ -31,8 +32,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     email_subject = config.app_config.emailSubject
     email_body = config.app_config.emailBody
     send_time = datetime.fromisoformat(dato)
-    if send_time < datetime.now(timezone.utc):
-        now = datetime.now(timezone.utc).isoformat(timespec="microseconds")        
+    if send_time < datetime.now(pytz.UTC):
+        now = datetime.now(pytz.UTC).isoformat(timespec="microseconds")        
         dt = datetime.fromisoformat(now)
         send_time = dt + timedelta(minutes=5)
     send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
@@ -44,6 +45,12 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
         send_time=send_time,
         appname=app_name
         )
+    if not response:
+        logging.error(f"Failed to send notification to {org_number} {digitaliseringstiltak_report_id} {app_name}")
+        return 500
+    if response.status_code != 201:
+        logging.error(f"Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}. Status: {response.text}")
+        return response.status_code
 
     if response.status_code == 201:
         response_data = response.json()
