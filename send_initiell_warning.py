@@ -29,7 +29,7 @@ def main():
 
 
     varsling_client = AltinnVarslingClient.init_from_config(config)
-    test_prefill_data = read_blob(f"{env}/test_virksomheter_prefill_with_uuid.json")
+    test_prefill_data = read_blob(f"{env}/virksomheter_prefill_with_uuid.json")
     
     for prefill_data_row in test_prefill_data[2:]:
         config.app_config.validate_prefill_data(prefill_data_row)
