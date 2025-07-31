@@ -10,7 +10,7 @@ import os
 import json
 from datetime import datetime
 import isodate
-from .type_dict_structure import DataModel
+from .type_dict_structure import DataModel, Prefill
 
 class PrefillValidationError(Exception):
     pass
@@ -20,7 +20,7 @@ def get_required_key(record, key):
         raise KeyError(f"Missing required key: {key}")
     return record[key]
 
-def transform_initiell_data_to_nested_with_prefill(flat_record):
+def transform_initiell_data_to_nested_with_prefill(flat_record) -> Prefill:
     return {
         "Prefill": {
             "AnsvarligDepartement": {
@@ -48,7 +48,15 @@ def transform_initiell_data_to_nested_with_prefill(flat_record):
             "Maal": {
                 "Nummer":  get_required_key(flat_record,"Maal.Nummer"),
                 "Tekst":  get_required_key(flat_record,"Maal.Tekst")
-            }
+            },
+            "Godkjenning": {
+                "SkalGodkjennes": get_required_key(flat_record,"Godkjenning.SkalGodkjennes"),
+                "Godkjenner": {
+                "FulltNavn":  get_required_key(flat_record,"Godkjenning.FulltNavn"),
+                "Telefonnummer":  get_required_key(flat_record,"Godkjenning.Telefonnummer"),
+                "EPostadresse":  get_required_key(flat_record,"Godkjenning.EPostadresse")
+                }
+            },
         }
     }
 
