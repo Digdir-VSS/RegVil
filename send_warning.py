@@ -10,7 +10,7 @@ from config.type_dict_structure import DataModel
 from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 load_dotenv()
 
 credential = DefaultAzureCredential()
@@ -22,6 +22,7 @@ secret_value = secret.value
 
 
 def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
+    print(f"Running send warning for org: {org_number}, report: {digitaliseringstiltak_report_id}, app: {app_name}, date: {dato},")
     logging.info("Starting sending notifications for {app_name}")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
@@ -55,7 +56,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     if response.status_code == 201:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
-        tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
+        tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
         tracker.logging_varlsing(org_number=org_number, org_name=org_name, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
         logging.info(f"Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
         return 200

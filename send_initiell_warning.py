@@ -31,7 +31,7 @@ def main():
     varsling_client = AltinnVarslingClient.init_from_config(config)
     test_prefill_data = read_blob(f"{env}/virksomheter_prefill_with_uuid.json")
     
-    for prefill_data_row in test_prefill_data[2:]:
+    for prefill_data_row in test_prefill_data[:2]:
         config.app_config.validate_prefill_data(prefill_data_row)
         recipient_email = prefill_data_row["Kontaktperson.EPostadresse"]
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
@@ -45,7 +45,7 @@ def main():
             send_time = dt + timedelta(minutes=5)
         send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
         response = varsling_client.send_notification(
-        recipient_email="ignacio.cuervo.torre@digdir.no",
+        recipient_email=recipient_email,
         subject = email_subject,
         body=email_body,
         send_time=send_time,
@@ -60,7 +60,7 @@ def main():
         if response.status_code == 201:
             response_data = response.json()
             shipment_id = response_data["notification"]["shipmentId"]
-            tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
+            tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
             tracker.logging_varlsing(
                 org_number=org_number,
                 org_name=prefill_data_row["AnsvarligVirksomhet.Navn"],
@@ -74,7 +74,7 @@ def main():
             logging.info(f"Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
         else:
             logging.warning(f"Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
-        break
+        
     logging.info(f"Successfully send out all notifications")
 
 

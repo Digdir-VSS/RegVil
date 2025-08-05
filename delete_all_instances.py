@@ -40,7 +40,6 @@ def main() -> None:
             instance_data = instance_meta.get("data")
             dataguid = get_meta_data_info(instance_data).get("id")
             tag = get_meta_data_info(instance_data).get("tags")
-            print(tag)
             if tag:
                 tag_response = regvil_instance_client.delete_tag(partyID, instance_id, dataguid, tag[0])
                 print(tag_response.status_code)

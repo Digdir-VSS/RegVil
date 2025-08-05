@@ -52,3 +52,5 @@ dist/
 # pip dependency resolver lock file
 pip-log.txt
 
+#pytest
+pytest.ini
