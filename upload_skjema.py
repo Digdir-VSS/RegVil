@@ -28,7 +28,7 @@ def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
-    test_prefill_data = read_blob(f"{os.getenv("ENV")}/test_virksomheter_prefill_with_uuid.json")
+    test_prefill_data = read_blob(f"{os.getenv("ENV")}/virksomheter_prefill_with_uuid.json")
 
     regvil_instance_client = AltinnInstanceClient.init_from_config(
         config,

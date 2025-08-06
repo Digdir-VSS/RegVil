@@ -45,7 +45,7 @@ def main():
             send_time = dt + timedelta(minutes=1)
         send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
         response = varsling_client.send_notification(
-        recipient_email="ignacio.cuervo.torre@digdir.no",
+        recipient_email=recipient_email,
         subject = email_subject,
         body=email_body,
         send_time=send_time,
