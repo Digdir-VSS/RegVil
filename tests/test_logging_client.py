@@ -4,8 +4,9 @@ from pathlib import Path
 import json
 from typing import Dict, Any
 
-from clients.instance_logging import PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker, find_event_by_instance
-from config.config_loader import validate_prefill_data
+from clients.instance_logging import PrefillValidationError, InstanceTracker, find_event_by_instance
+from config.utils import transform_initiell_data_to_nested_with_prefill
+from config.config_loader import validate_prefill_data, get_prefill_data
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
         return json.load(file)
@@ -23,7 +24,7 @@ def test_prefill_validation_fails(row):
         validate_prefill_data(row)
 
 def test_transform_flat_to_nested_with_prefill_single():
-    result = transform_flat_to_nested_with_prefill(test_prefill_data[0])
+    result = transform_initiell_data_to_nested_with_prefill(test_prefill_data[0])
     expected = {
         "Prefill": {
             "AnsvarligDepartement": {

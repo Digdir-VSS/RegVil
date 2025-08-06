@@ -58,7 +58,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     if response.status_code == 201:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
-        tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
+        tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
         tracker.logging_varlsing(org_number=org_number, org_name=org_name,app_name=app_name, send_time=send_time, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
         logging.info(f"Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
         return 200
