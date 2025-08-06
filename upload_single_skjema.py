@@ -76,26 +76,39 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     logging.info(
                 f"Successfully created instance for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_meta_data['id']}"
             )
+    instance_data = regvil_instance_client.get_instance_data(
+                party_id,
+                instance_id,
+                instance_data_meta_data.get('id')
+            )
+    if instance_data.status_code != 200:
+        logging.error(
+            f"Failed to retrieve instance data for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_data.status_code}"
+        )
+        return 502
+    else:
+        instance_data_file = instance_data.json()
+        # Log the instance creation & save it
 
-    tracker.logging_instance(
+        tracker.logging_instance(
             instance_id,
             org_number,
             digitaliseringstiltak_report_id,
             instance_meta_data,
-            instance_data_meta_data,
+            instance_data_file,
             api_config.app_config.tag["tag_instance"],
-            )
+        )
 
-    tag_result = regvil_instance_client.tag_instance_data(
-                party_id,
-                instance_id,
-                instance_data_meta_data["id"],
-                digitaliseringstiltak_report_id,
-            )
-    if tag_result.status_code == 201:
-            logging.info(f"Successfully tagged instance for org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
-    else:
-            logging.warning(f"Failed to tag instance org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
-            return 206
-    logging.info(f"Successfully send out instance id: {instance_id}, party id {party_id}, report id: {digitaliseringstiltak_report_id} to app name {app_name} Orgnumber: {org_number}")
-    return 200
+        tag_result = regvil_instance_client.tag_instance_data(
+                    party_id,
+                    instance_id,
+                    instance_data_meta_data["id"],
+                    digitaliseringstiltak_report_id,
+                )
+        if tag_result.status_code == 201:
+                logging.info(f"Successfully tagged instance for org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
+        else:
+                logging.warning(f"Failed to tag instance org number: {org_number} party id: {instance_meta_data['instanceOwner']['partyId']} instance id: {instance_meta_data['id']}")
+                return 206
+        logging.info(f"Successfully send out instance id: {instance_id}, party id {party_id}, report id: {digitaliseringstiltak_report_id} to app name {app_name} Orgnumber: {org_number}")
+        return 200

@@ -3,6 +3,7 @@ import logging
 
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
+from send_warning import run as send_notification
 
 app = Flask(__name__)
 
@@ -35,7 +36,15 @@ def handle_event():
 
             result = upload_skjema(**download_params)
             if result == 200:
-                return "Event received and processed", 200
+                notification_results = send_notification(**download_params)
+                if notification_results == 200:
+                    logging.info(f"Notification sent successfully for app name: {app_name} party id: {party_id} instance id: {instance_id}.")
+                    print(f"Notification sent successfully for app name: {app_name} party id: {party_id} instance id: {instance_id}.")
+                    return "Event received and processed. Notification sent", 200
+                else:
+                    logging.error(f"Notification failed for app name: {app_name} party id: {party_id} instance id: {instance_id}. Status code: {notification_results}")
+                    print(f"Notification failed for app name: {app_name} party id: {party_id} instance id: {instance_id}. Status code: {notification_results}")
+                    return "Event received and processed. Notification failed", 200
             else:
                 return "Error in processing", result
         else:
@@ -47,4 +56,4 @@ def handle_event():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80, debug=True)

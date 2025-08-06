@@ -4,8 +4,8 @@ from pathlib import Path
 import json
 from typing import Dict, Any
 
-from clients.instance_logging import validate_prefill_data, PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker, find_event_by_instance
-
+from clients.instance_logging import PrefillValidationError, transform_flat_to_nested_with_prefill, InstanceTracker, find_event_by_instance
+from config.config_loader import validate_prefill_data
 def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
     with open(path_to_json_file, 'r', encoding='utf-8') as file:
         return json.load(file)
