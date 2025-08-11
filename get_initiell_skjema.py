@@ -62,10 +62,16 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                     instance_id,
                     meta_data.get("id")
                 )
-
-        report_data = instance_data.json()           
-
-        tracker.logging_instance(
+        if not instance_data:
+            logging.error(f"Failed to fetch instance data for party id: {party_id} instance id: {instance_id}")
+            return {}, 502
+        if instance_data.status_code not in [200, 201]:
+            logging.error(f"Failed to fetch instance data for party id: {party_id} instance id: {instance_id}. Status code: {instance_data.status_code}")
+            return {}, instance_data.status_code
+        else:
+            try:
+                report_data = instance_data.json()     
+                tracker.logging_instance(
                     instance_id,
                     instance_meta_info["instanceOwner"]["organisationNumber"],
                     digitaliseringstiltak_report_id,
@@ -74,10 +80,19 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                     config.app_config.tag["tag_download"]
                 )
             
-        logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
+                logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
+                if config.app_config.app_name == "regvil-2025-status" and report_data.get("Status").get("ErArbeidAvsluttet") == False:
+                    app_name = config.app_config.app_name
+                else:
+                    app_name = config.workflow_dag.get_next(app_name)
 
-        return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": config.workflow_dag.get_next(app_name), "prefill_data": report_data}, 200
 
+                return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": app_name, "prefill_data": report_data}, 200
+      
+            except ValueError:
+                logging.error(f"Error processing instance data for party id: {party_id}, instance id {instance_id}")
+                return {}, 502
+        
     else:
         logging.warning(f"Already downloaded: {app_name} InstanceId: {instance_id} ReportId: {digitaliseringstiltak_report_id}")
         return {}, 204

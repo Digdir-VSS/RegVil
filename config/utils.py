@@ -122,11 +122,8 @@ def validate_initiell_prefill_data(prefill_data_row: Dict[str, Any]) -> bool:
     # 6. Validate string fields that should be numbers as strings
     number_string_fields = [
         "Tiltak.Nummer",
-        "Tiltak.Tekst", 
         "Kapittel.Nummer",
-        "Kapittel.Tekst",
-        "Maal.Nummer", 
-        "Maal.Tekst"
+        "Maal.Nummer"
     ]
     
     for field in number_string_fields:
@@ -268,7 +265,16 @@ def blob_directory_exists(directory: str) -> bool:
     except Exception as e:
         logging.error(f"Error checking existence of directory {directory}: {e}")
         return False
-
+def list_blobs_with_prefix(prefix: str) -> list[str]:
+    container_client = connect_blob()
+    if not container_client:
+        return []
+    try:
+        blob_list = container_client.list_blobs(name_starts_with=prefix)
+        return [blob.name for blob in blob_list]
+    except Exception as e:
+        logging.error(f"Error listing blobs with prefix {prefix}: {e}")
+        return []
 
 def to_utc_aware(dt_str: str) -> datetime:
     # Accepts ISO 8601 strings like '2025-07-30T08:00:00Z' or '2024-01-31'
