@@ -81,12 +81,7 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
                 instance_id,
                 instance_data_meta_data.get('id')
             )
-    if instance_data.status_code != 200:
-        logging.error(
-            f"Failed to retrieve instance data for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_data.status_code}"
-        )
-        return 502
-    else:
+    if instance_data.status_code == 200:
         instance_data_file = instance_data.json()
         # Log the instance creation & save it
 
@@ -112,3 +107,9 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
                 return 206
         logging.info(f"Successfully send out instance id: {instance_id}, party id {party_id}, report id: {digitaliseringstiltak_report_id} to app name {app_name} Orgnumber: {org_number}")
         return 200
+    else:
+        logging.error(
+            f"Failed to retrieve instance data for org nr {org_number}/ report id {digitaliseringstiltak_report_id}: {instance_data.status_code}"
+        )
+        return 502
+        
