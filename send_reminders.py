@@ -49,6 +49,7 @@ def check_instance_active(instance_id, instance_meta, tag) -> bool:
 def run() -> None:
     logging.info("Checking for instances that have not been answered")
     path_to_config_folder = Path(__file__).parent / "config_files"
+    sent_reminders = []
     for app in apps:
         config = load_full_config(path_to_config_folder, app, os.getenv("ENV"))
         regvil_instance_client = AltinnInstanceClient.init_from_config(
@@ -110,4 +111,13 @@ def run() -> None:
                     "prefill_data": data,
                 }
             send_warning(**file)
-    return 200
+            sent_reminders.append({
+                    "org_number": org_number,
+                    "party_id": partyID,
+                    "instance_id": instance_id,
+                    "org_name":data.get("Prefill").get("AnsvarligVirksomhet"),
+                    "digitaliseringstiltak_report_id": tag[0],
+                    "dato": dato,
+                    "app_name": app,
+                })
+    return sent_reminders, 200
