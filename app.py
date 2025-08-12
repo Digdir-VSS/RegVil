@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
 from send_warning import run as send_notification
-from send_reminders import run as send_reminder
+from send_reminders import run as run_reminder_job
 load_dotenv()
 
 app = Flask(__name__)
@@ -64,14 +64,12 @@ def send_reminder():
         api_key = request.headers.get("X-Api-Key")
         if api_key != os.getenv("REMINDER_API_KEY"):
             return jsonify({"status": "unauthorized", "reminders": []}), 401
-        result = send_reminder()
-        return jsonify({"status": "success", "reminders": result}), 200
+        result, status_code = run_reminder_job()
+        return jsonify({"status": "success", "reminders": result}), str(status_code)
 
     except Exception as e:
         logging.exception("Error while processing send_reminder request")
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80, debug=True)
