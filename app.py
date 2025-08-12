@@ -1,9 +1,13 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import logging
+import os
+from dotenv import load_dotenv
 
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
 from send_warning import run as send_notification
+from send_reminders import run as send_reminder
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -32,7 +36,7 @@ def handle_event():
             
             if app_name == "regvil-2025-slutt":
                 logging.info(f"Terminal app reached: {app_name}. No further processing.")
-                return "Workflow complete – no further action.", 200
+                return "Workflow complete - no further action.", 200
 
             result = upload_skjema(**download_params)
             if result == 200:
@@ -53,6 +57,20 @@ def handle_event():
     except Exception as e:
         logging.error(f"Error: {e}")
         return f"Internal Server Error: {str(e)}", 500
+
+@app.route("/send_reminder", methods=["POST"])
+def send_reminder():
+    try:
+        api_key = request.headers.get("X-Api-Key")
+        if api_key != os.getenv("REMINDER_API_KEY"):
+            return jsonify({"status": "unauthorized", "reminders": []}), 401
+        result = send_reminder()
+        return jsonify({"status": "success", "reminders": result}), 200
+
+    except Exception as e:
+        logging.exception("Error while processing send_reminder request")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 if __name__ == "__main__":
