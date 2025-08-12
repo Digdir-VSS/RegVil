@@ -75,31 +75,26 @@ def run() -> None:
 
             data_resp = regvil_instance_client.get_instance_data(partyID, instance_id, dataguid)
             if data_resp.status_code != 200:
-                logging.warning("Continue")
                 continue
 
             data = data_resp.json()
             if not check_instance_active(instance_id, instance_meta, tag):
-                logging.warning("Continue")
                 continue
 
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
-                 logging.warning("Continue because different changed")
                  continue
             
             if visibleAfterformated + timedelta(days=14) > datetime.now(timezone.utc):
                 logging.info(
                     f"Instance {instance_id} is still within the 14-day visibility period."
                 )
-                logging.warning("Continue")
                 continue
                 
             send_notifications_times = get_latest_notification_date(tag, app)
             if not send_notifications_times:
-                logging.warning("Continue because empty send_notifications_times")
                 continue
+
             if max(send_notifications_times)+ timedelta(days=14) > datetime.now(timezone.utc):
-                logging.warning("Continue because max to early send_notifications_times")
                 continue
 
             org_number = (
@@ -118,16 +113,7 @@ def run() -> None:
                     "app_name": app,
                     "prefill_data": data,
                 }
-            #send_warning(**file)
-            logging.warning({
-                    "org_number": org_number,
-                    "party_id": partyID,
-                    "instance_id": instance_id,
-                    "org_name":data.get("Prefill").get("AnsvarligVirksomhet").get("Navn"),
-                    "digitaliseringstiltak_report_id": tag[0],
-                    "dato": dato,
-                    "app_name": app,
-                })
+            send_warning(**file)
             sent_reminders.append({
                     "org_number": org_number,
                     "party_id": partyID,
