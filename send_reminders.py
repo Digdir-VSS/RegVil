@@ -58,6 +58,7 @@ def run() -> None:
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
+
             inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
             if inst_resp.status_code != 200:
                 continue
