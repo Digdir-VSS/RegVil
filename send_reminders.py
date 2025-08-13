@@ -29,19 +29,18 @@ def get_latest_notification_date(tag: List[str], app: str) -> List[datetime]:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
-        logging.warning([datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent])
         return [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent]
 
 def check_instance_active(instance_id, instance_meta, tag) -> bool:
     if instance_meta.get("isHardDeleted"):
-        logging.warning(f"Instance {instance_id} is already hard deleted.")
+        logging.info(f"Instance {instance_id} is already hard deleted.")
         return False
     if instance_meta.get("isSoftDeleted"):
-        logging.warning(f"Instance {instance_id} is soft deleted.")
+        logging.info(f"Instance {instance_id} is soft deleted.")
         return False    
                
     if len(tag) == 0:
-        logging.warning(f"Instance {instance_id} has no tag. Probably deleted.")
+        logging.info(f"Instance {instance_id} has no tag. Probably deleted.")
         return False
     return True 
 
@@ -56,11 +55,9 @@ def run() -> None:
             config,
         )
         logging.info("Checking for instances that have not been answered")
-        print("Checking for instances that have not been answered")
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
-            logging.warning(f"App: {app}, new instance {partyID}")
             inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
             if inst_resp.status_code != 200:
                 continue
