@@ -72,6 +72,9 @@ docker run --env-file .env -p 8080:80 regvildockerregistry.azurecr.io/regvil-app
 ```
 ## 5. Send Test Data
 To send out test "initiell" reports to Altinn, run:
+
+## Show running Docker Image
+az containerapp show --name "regvil-app" --resource-group "regvil-app-resource" --query "properties.template.containers[0].image"    
 ```bash
 python upload_skjema.py
 ```
