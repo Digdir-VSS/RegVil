@@ -60,11 +60,13 @@ def test_run_success(
     mock_altinn.get_instance.return_value = instance_mock
     mock_altinn.get_instance_data.return_value.json.return_value = {"field": "value"}
     mock_altinn.tag_instance_data.return_value.status_code = 200
+    mock_altinn.get_instance_data.return_value.status_code = 200
 
     mock_tracker_inst = mock_tracker.from_directory.return_value
 
     params, status_code = run(SAMPLE_PARTY_ID, SAMPLE_INSTANCE_ID, SAMPLE_APP_NAME)
     assert isinstance(params, dict)
+   
     assert status_code == 200
 
 #Test: Successful full run
@@ -107,6 +109,7 @@ def test_run_success_full_flow(
         "data": [{"tags": ["InitiellSkjemaDownloaded"], "id": "abc123",  "createdBy": "user1", "lastChangedBy": "user2"}]
     }
     mock_client.get_instance.return_value.status_code = 201
+    mock_client.get_instance_data.return_value.status_code = 200
 
     mock_client.get_instance_data.return_value.json.return_value = {
         "Initiell": {"DatoPaabegynt": "2024-01-01"}

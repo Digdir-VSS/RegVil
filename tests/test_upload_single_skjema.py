@@ -11,7 +11,7 @@ from upload_single_skjema import run
 
 def test_run_success(monkeypatch):
     # Mock the config loader
-    monkeypatch.setattr("upload_skjema.load_full_config", lambda path, app_name, env: MagicMock(
+    monkeypatch.setattr("upload_single_skjema.load_full_config", lambda path, app_name, env: MagicMock(
         app_config=MagicMock(
             app_name="regvil-2025-initiell",
             tag={"tag_instance": "InitiellSkjemaLevert"}
@@ -29,9 +29,15 @@ def test_run_success(monkeypatch):
     }
     mock_tag_response = MagicMock()
     mock_tag_response.status_code = 201
+    
+    mock_get_data_response = MagicMock()
+    mock_get_data_response.status_code = 200
+    mock_get_data_response.json.return_value = {"Initiell": {"DatoPaabegynt": "2024-01-01"}}
+    mock_client.get_instance_data.return_value = mock_get_data_response
 
     mock_client.post_new_instance.return_value = mock_instance_response
     mock_client.tag_instance_data.return_value = mock_tag_response
+    mock_client.tag_instance_data.return_value.status_code = 201
     mock_client.instance_created.return_value = False
 
     monkeypatch.setattr("upload_skjema.AltinnInstanceClient.init_from_config", lambda config: mock_client)
@@ -45,14 +51,14 @@ def test_run_success(monkeypatch):
     monkeypatch.setattr("upload_skjema.get_meta_data_info", lambda data: {"id": "data-guid-123"})
 
     # Run the function with test data
-    run(
+    status = run(
         org_number="51625403",
         digitaliseringstiltak_report_id="test-report-001",
         dato="2025-08-01T00:00:00Z",
         app_name="regvil-2025-initiell",
         prefill_data={"some": "data"}
     )
-
+    assert status == 200
     # Assert calls were made (optional, depending on your test strictness)
     mock_client.post_new_instance.assert_called()
     mock_client.tag_instance_data.assert_called()
