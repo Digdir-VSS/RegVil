@@ -26,7 +26,6 @@ def main() -> None:
             config,
         )
         logging.info("Checking for instances that have not been answered")
-        print("Checking for instances that have not been answered")
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
@@ -38,16 +37,20 @@ def main() -> None:
                 tag = get_meta_data_info(instance_data).get("tags")
                 visibleAfter = instance_meta.get("visibleAfter")
                 visibleAfterformated = datetime.fromisoformat(visibleAfter)
+                date_created = get_meta_data_info(instance_data).get("created")
+                dateCreatedFormated = datetime.fromisoformat(date_created)
+
                 if instance_meta.get("isHardDeleted"):
                     logging.info(f"Instance {instance_id} is already hard deleted.")
                     continue
                 if instance_meta.get("isSoftDeleted"):
                     logging.warning(f"Instance {instance_id} is soft deleted.")
                     continue
-                if visibleAfterformated > datetime.now(timezone.utc):
-                    logging.info(f"Instance {instance_id} is not yet visible.")
+                if dateCreatedFormated < datetime.now(timezone.utc) - timedelta(days=14):
+                    logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
                     continue
-                if visibleAfterformated > datetime.now(timezone.utc) - timedelta(days=14):
+                
+                if visibleAfterformated < datetime.now(timezone.utc) - timedelta(days=14):
                     logging.info(f"Instance {instance_id} is still within the 14-day visibility period.")
                     continue   
                 if len(tag) == 0 :
