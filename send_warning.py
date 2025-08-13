@@ -27,15 +27,18 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
     varsling_client = AltinnVarslingClient.init_from_config(config)
-    recipient_email = prefill_data.get("Initiell").get("Kontaktperson").get("EPostadresse")
-    org_name = prefill_data.get("Initiell").get("AnsvarligVirksomhet").get("Navn")  
+    recipient_email = prefill_data.get("Prefill").get("Kontaktperson").get("EPostadresse")
+    org_name = prefill_data.get("Prefill").get("AnsvarligVirksomhet").get("Navn")  
     email_subject = config.app_config.emailSubject
     email_body = config.app_config.emailBody
-    send_time = datetime.fromisoformat(dato)
+    naive_dt = datetime.strptime(dato, "%Y-%m-%d")
+    send_time = naive_dt.replace(tzinfo=timezone.utc)
+    
+    # send_time = datetime.fromisoformat(dato)
     if send_time < datetime.now(pytz.UTC):
         now = datetime.now(pytz.UTC).isoformat(timespec="microseconds")        
         dt = datetime.fromisoformat(now)
-        send_time = dt + timedelta(minutes=5)
+        send_time = dt + timedelta(minutes=1)
     send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
 
     response = varsling_client.send_notification(
@@ -55,8 +58,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     if response.status_code == 201:
         response_data = response.json()
         shipment_id = response_data["notification"]["shipmentId"]
-        tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
-        tracker.logging_varlsing(org_number=org_number, org_name=org_name, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
+        tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
+        tracker.logging_varlsing(org_number=org_number, org_name=org_name,app_name=app_name, send_time=send_time, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
         logging.info(f"Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
         return 200
     else:

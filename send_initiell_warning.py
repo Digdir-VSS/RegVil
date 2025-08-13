@@ -29,7 +29,7 @@ def main():
 
 
     varsling_client = AltinnVarslingClient.init_from_config(config)
-    test_prefill_data = read_blob(f"{env}/test_virksomheter_prefill_with_uuid.json")
+    test_prefill_data = read_blob(f"{env}/virksomheter_prefill_with_uuid.json")
     
     for prefill_data_row in test_prefill_data[2:]:
         config.app_config.validate_prefill_data(prefill_data_row)
@@ -42,10 +42,10 @@ def main():
         if send_time < datetime.now(pytz.UTC):
             now = datetime.now(pytz.UTC).isoformat(timespec="microseconds")        
             dt = datetime.fromisoformat(now)
-            send_time = dt + timedelta(minutes=5)
+            send_time = dt + timedelta(minutes=1)
         send_time = send_time.isoformat(timespec="microseconds").replace("+00:00", "Z")
         response = varsling_client.send_notification(
-        recipient_email="ignacio.cuervo.torre@digdir.no",
+        recipient_email=recipient_email,
         subject = email_subject,
         body=email_body,
         send_time=send_time,
@@ -60,7 +60,7 @@ def main():
         if response.status_code == 201:
             response_data = response.json()
             shipment_id = response_data["notification"]["shipmentId"]
-            tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/varsling/")
+            tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
             tracker.logging_varlsing(
                 org_number=org_number,
                 org_name=prefill_data_row["AnsvarligVirksomhet.Navn"],

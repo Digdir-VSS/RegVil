@@ -1,8 +1,13 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import logging
+import os
+from dotenv import load_dotenv
 
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
+from send_warning import run as send_notification
+from send_reminders import run as run_reminder_job
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -31,11 +36,19 @@ def handle_event():
             
             if app_name == "regvil-2025-slutt":
                 logging.info(f"Terminal app reached: {app_name}. No further processing.")
-                return "Workflow complete – no further action.", 200
+                return "Workflow complete - no further action.", 200
 
             result = upload_skjema(**download_params)
             if result == 200:
-                return "Event received and processed", 200
+                notification_results = send_notification(**download_params)
+                if notification_results == 200:
+                    logging.info(f"Notification sent successfully for app name: {app_name} party id: {party_id} instance id: {instance_id}.")
+                    print(f"Notification sent successfully for app name: {app_name} party id: {party_id} instance id: {instance_id}.")
+                    return "Event received and processed. Notification sent", 200
+                else:
+                    logging.error(f"Notification failed for app name: {app_name} party id: {party_id} instance id: {instance_id}. Status code: {notification_results}")
+                    print(f"Notification failed for app name: {app_name} party id: {party_id} instance id: {instance_id}. Status code: {notification_results}")
+                    return "Event received and processed. Notification failed", 200
             else:
                 return "Error in processing", result
         else:
@@ -45,6 +58,18 @@ def handle_event():
         logging.error(f"Error: {e}")
         return f"Internal Server Error: {str(e)}", 500
 
+@app.route("/send_reminder", methods=["POST"])
+def send_reminder():
+    try:
+        api_key = request.headers.get("X-Api-Key")
+        if api_key != os.getenv("REMINDER_API_KEY"):
+            return jsonify({"status": "unauthorized", "reminders": []}), 401
+        result, status_code = run_reminder_job()
+        return jsonify({"status": "success", "reminders": result}), str(status_code)
+
+    except Exception as e:
+        logging.exception("Error while processing send_reminder request")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80, debug=True)
