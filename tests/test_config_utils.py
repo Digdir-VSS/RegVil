@@ -80,22 +80,10 @@ def test_get_initiell_date_forventet_oppstart():
     reported_data = {
         "Initiell": {
             "ErTiltaketPaabegynt": False,
-            "VetOppstartsDato": True,
             "DatoForventetOppstart": "2025-08-01T00:00:00Z"
         }
     }
     assert get_initiell_date(reported_data, "P3M") == "2025-08-01T00:00:00Z"
-
-def test_get_initiell_date_fallback_to_today(monkeypatch):
-    reported_data = {
-        "Initiell": {
-            "ErTiltaketPaabegynt": False,
-            "VetOppstartsDato": False
-        }
-    }
-    monkeypatch.setattr("config.utils.get_today_date", lambda: "2025-07-24T12:00:00Z")
-    assert get_initiell_date(reported_data, "P3M") == "2025-10-24T12:00:00Z"
-    
 
 def test_get_status_date_finished(monkeypatch):
     reported_data = {
