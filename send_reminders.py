@@ -58,7 +58,6 @@ def run() -> None:
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
-
             inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
             if inst_resp.status_code != 200:
                 continue
@@ -67,7 +66,8 @@ def run() -> None:
             instance_data = get_meta_data_info(instance_meta.get("data"))
             visibleAfter = instance_meta.get("visibleAfter")
             visibleAfterformated = datetime.fromisoformat(visibleAfter)
-            
+            date_created = get_meta_data_info(instance_data).get("created")
+            dateCreatedFormated = datetime.fromisoformat(date_created)
             dataguid = instance_data.get("id")
             tag = instance_data.get("tags")
 
@@ -81,7 +81,9 @@ def run() -> None:
 
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
                  continue
-            
+            if dateCreatedFormated < datetime.now(timezone.utc) - timedelta(days=14):
+                logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
+                continue
             if visibleAfterformated + timedelta(days=14) > datetime.now(timezone.utc):
                 logging.info(
                     f"Instance {instance_id} is still within the 14-day visibility period."
