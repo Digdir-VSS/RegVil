@@ -83,6 +83,16 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                 logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
                 if config.app_config.app_name == "regvil-2025-status" and report_data.get("Status").get("ErArbeidAvsluttet") == False:
                     app_name = config.app_config.app_name
+                    tag_response = regvil_instance_client.delete_tag(party_id, instance_id, meta_data.get("id"), digitaliseringstiltak_report_id)
+                    if tag_response and  tag_response.status_code in [200,201,204]:
+                        logging.info(
+                        f"Deleting tag '{digitaliseringstiltak_report_id}' from instance_id='{instance_id}', "
+                        f"party_id='{party_id}', altinn_id='{meta_data.get('id')}'")
+                    else:
+                        logging.error(
+                        f"Failed to delete tag '{digitaliseringstiltak_report_id}' from instance_id='{instance_id}', "
+                        f"party_id='{party_id}', altinn_id='{meta_data.get('id')}'"
+                        f"Status report will NOT be send on!")
                 else:
                     app_name = config.workflow_dag.get_next(app_name)
 
