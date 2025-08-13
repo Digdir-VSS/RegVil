@@ -50,7 +50,6 @@ class Initiell(TypedDict, total=False):
     AndreKontaktpersoner: Optional[List[Kontaktperson]]
     ErTiltaketPaabegynt: Optional[bool]
     DatoPaabegynt: Optional[str]
-    VetOppstartsDato: Optional[bool]
     DatoForventetOppstart: Optional[str]
 
 
