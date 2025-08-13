@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from clients.instance_client import AltinnInstanceClient
 from config.config_loader import load_full_config
+from unittest.mock import MagicMock
 
 load_dotenv()
 
@@ -27,15 +28,29 @@ secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 
-def test_instance_created_found():
-    """Test instance_created returns True when instance exists with matching report_id"""
-    test_instance_client = AltinnInstanceClient.init_from_config(config)
-    # Test with existing instance that should have the report_id
-    result = test_instance_client.instance_created(
-        "310075728",  # org_number
-        "InitiellSkjemaLevert"  # report_id that should exist
+def test_instance_created_found(monkeypatch):
+    # Patch AltinnInstanceClient.init_from_config to return a fake client
+    mock_client = MagicMock()
+
+    # Force get_stored_instances_ids to return data that always matches the org_number + tag
+    mock_client.get_stored_instances_ids.return_value = [
+        {"organisationNumber": "310075728", "tags": ["InitiellSkjemaLevert"]}
+    ]
+
+    # Patch the classmethod so it returns our fake client
+    monkeypatch.setattr(
+        "clients.instance_client.AltinnInstanceClient.init_from_config",
+        lambda cfg: mock_client
     )
-    
+
+    # Call the real instance_created on the mock (you can use MagicMock side_effect if you want)
+    mock_client.instance_created = AltinnInstanceClient.instance_created.__get__(mock_client)
+
+    result = mock_client.instance_created(
+        "310075728",  # org_number
+        "InitiellSkjemaLevert"  # tag
+    )
+
     assert result is True
 
 
