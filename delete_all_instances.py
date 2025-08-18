@@ -20,6 +20,8 @@ def main() -> None:
     logging.info("Starting Altinn survey sending instance processing")
     path_to_config_folder = Path(__file__).parent / "config_files"
     regvil_skjema = input("Enter the app name to delete all instances: [regvil-2025-initiell, regvil-2025-oppstart, regvil-2025-status, regvil-2025-slutt] ")
+    if regvil_skjema not in ["regvil-2025-initiell", "regvil-2025-oppstart", "regvil-2025-status", "regvil-2025-slutt"]:
+        return "Skjema not in list"
     config = load_full_config(path_to_config_folder, regvil_skjema, os.getenv("ENV"))
     regvil_instance_client = AltinnInstanceClient.init_from_config(
         config,
