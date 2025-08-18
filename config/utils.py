@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 import isodate
 from .type_dict_structure import DataModel, Prefill
+from datetime import datetime, timezone, timedelta
 
 
 class PrefillValidationError(Exception):
@@ -412,3 +413,11 @@ def create_payload(
 def split_party_instance_id(party_instance_id: str) -> Tuple[str]:
     party_id, instance_id = party_instance_id.split("/")
     return party_id, instance_id
+
+
+def is_before_time_delta(date: str, time_delta: Optional[int]=None) -> bool:
+    if time_delta is None:
+        time_delta = 0
+    naive_dt = datetime.strptime(date, "%Y-%m-%d")
+    formated_date = naive_dt.replace(tzinfo=timezone.utc)
+    return formated_date < datetime.now(pytz.UTC) - timedelta(days=time_delta)
