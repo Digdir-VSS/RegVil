@@ -71,6 +71,7 @@ class InstanceTracker:
             "processed_timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             "instancePartyId": instance_meta_data['instanceOwner'].get("partyId"),
             "instanceId": instance_id,
+            "visibleAfter": instance_meta_data.get("visibleAfter"),
             "instance_info.last_changed": instance_meta_data.get('lastChanged'),
             "instance_info.last_changed_by": instance_meta_data.get('lastChangedBy'),
             "instance_info.created": instance_meta_data.get('created'),
