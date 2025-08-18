@@ -22,7 +22,7 @@ secret_value = secret.value
 
 
 def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
-    logging.info("Starting sending notifications for {app_name}")
+    logging.info("NOTIFICATION:Starting sending notifications for {app_name}")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
 
@@ -49,10 +49,10 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
         appname=app_name
         )
     if not response:
-        logging.error(f"Failed to send notification to {org_number} {digitaliseringstiltak_report_id} {app_name}")
+        logging.error(f"NOTIFICATION:Failed to send notification to {org_number} {digitaliseringstiltak_report_id} {app_name}")
         return 500
     if response.status_code != 201:
-        logging.error(f"Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}. Status: {response.text}")
+        logging.error(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}. Status: {response.text}")
         return response.status_code
 
     if response.status_code == 201:
@@ -60,10 +60,11 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
         shipment_id = response_data["notification"]["shipmentId"]
         tracker = InstanceTracker.from_directory(f"{os.getenv('ENV')}/varsling/")
         tracker.logging_varlsing(org_number=org_number, org_name=org_name,app_name=app_name, send_time=send_time, digitaliseringstiltak_report_id=digitaliseringstiltak_report_id, shipment_id=shipment_id, recipientEmail=recipient_email, event_type="Varsling1Send")
-        logging.info(f"Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
+        logging.info(f"NOTIFICATION:Notification sent successfully to {org_number} {digitaliseringstiltak_report_id} with shipment ID: {shipment_id}")
         return 200
     else:
-        logging.warning(f"Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}")
+        logging.warning(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}")
+        print(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {digitaliseringstiltak_report_id} appname: {app_name}")
         return 206
     
         

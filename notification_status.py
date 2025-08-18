@@ -39,10 +39,10 @@ def main():
             varsling_client = AltinnVarslingClient.init_from_config(config)
             response = varsling_client.get_shipment_status(shipment_id=shipment_id)
             if not response:
-                logging.error(f"Failed to get shipment status for {shipment_id} and {report_id[len(directory):]}")
+                logging.error(f"NOTIFICATION STATUS:Failed to get shipment status for {shipment_id} and {report_id[len(directory):]}")
                 continue
             if response.status_code != 200:
-                logging.error(f"Failed to get shipment status for {shipment_id}: {response.text}")
+                logging.error(f"NOTIFICATION STATUS:Failed to get shipment status for {shipment_id}: {response.text}")
                 continue    
             if response.json().get("status") == "Order_Completed":
                 sent_blob_name = f"{report_id}_{app_name}_Varsling1Send_{shipment_id}.json"
@@ -64,11 +64,9 @@ def main():
                     shipment_status= response.json()
                 )
                 if response.json().get("recipients")[0].get("status")== "Email_Delivered":
-                    logging.info(f"Marked as received: {recieved_blob_name}")
-                    print(f"Marked as received: {recieved_blob_name}")
+                    logging.info(f"NOTIFICATION STATUS:Marked as received: {recieved_blob_name}")
                 else:
-                    logging.warning(f"Shipment {shipment_id} not delivered to {recipient_email}. Status: {response.json().get("recipients")[0].get("status")}")
-                    print(f"Shipment {shipment_id} not delivered to {recipient_email}. Status: {response.json().get("recipients")[0].get("status")}")
+                    logging.warning(f"NOTIFICATION STATUS:Shipment {shipment_id} not delivered to {recipient_email}. Status: {response.json().get("recipients")[0].get("status")}")
 
 
 
