@@ -11,6 +11,7 @@ from clients.varsling_client import AltinnVarslingClient
 from clients.instance_logging import InstanceTracker
 from config.config_loader import load_full_config
 from datetime import datetime, timezone, timedelta
+from config.utils import parse_date
 load_dotenv()
 
 credential = DefaultAzureCredential()
@@ -31,7 +32,8 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     org_name = prefill_data.get("Prefill").get("AnsvarligVirksomhet").get("Navn")  
     email_subject = config.app_config.emailSubject
     email_body = config.app_config.emailBody
-    naive_dt = datetime.strptime(dato, "%Y-%m-%d")
+    naive_dt = parse_date(dato)
+    # naive_dt = datetime.strptime(dato, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
     send_time = naive_dt.replace(tzinfo=timezone.utc)
     
     # send_time = datetime.fromisoformat(dato)

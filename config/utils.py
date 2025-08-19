@@ -8,7 +8,7 @@ from azure.identity import DefaultAzureCredential, EnvironmentCredential
 from dotenv import load_dotenv
 import os
 import json
-from datetime import datetime
+from datetime import datetime, date
 import isodate
 from .type_dict_structure import DataModel, Prefill
 from datetime import datetime, timezone, timedelta
@@ -347,7 +347,29 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
 
+def next_eval_date(date_str: str, status: str | None) -> date:
+    given_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    cutoff_date = date(2025, 12, 1)
 
+    # Case 1: status is None and date < cutoff → return same date
+    if status is None and given_date < cutoff_date:
+        return given_date
+
+    # Case 2: find next 1st Feb or 1st Sep after given_date
+    year = given_date.year
+    feb = date(year, 2, 1)
+    sep = date(year, 9, 1)
+
+    # If given date is before Feb 1 → return Feb 1
+    if given_date < feb:
+        return feb
+    # If before Sep 1 → return Sep 1
+    elif given_date < sep:
+        return sep
+    # Otherwise → return Feb 1 of next year
+    else:
+        return date(year + 1, 2, 1)
+    
 def get_initiell_date(reported_data: DataModel, time_delta: str) -> Optional[str]:
     initiell = reported_data.get("Initiell")
     if initiell.get("ErTiltaketPaabegynt"):
@@ -360,10 +382,18 @@ def get_initiell_date(reported_data: DataModel, time_delta: str) -> Optional[str
 
 def get_oppstart_date(reported_data: DataModel, time_delta: str) -> str:
     oppstart = reported_data.get("Oppstart")
-    result_date = add_time_delta(oppstart.get("ForventetSluttdato"), time_delta)
-    if check_date_before(result_date, get_today_date()):
-        return get_today_date()
-    return result_date
+    initiell = reported_data.get("Initiell")
+    if not initiell.get("ErTiltaketPaabegynt") and not check_date_before(initiell.get("DatoForventetOppstart"), get_today_date()):
+        return initiell.get("DatoForventetOppstart")
+            
+    else:
+        status = reported_data.get("Status")
+        next_date = next_eval_date(oppstart.get("ForventetSluttdato"), status)
+        return next_date.strftime("%Y-%m-%d")
+        # result_date = add_time_delta(oppstart.get("ForventetSluttdato"), time_delta)
+        # if check_date_before(result_date, get_today_date()):
+        #     return get_today_date()
+        # return result_date
 
 
 def get_status_date(
@@ -371,9 +401,12 @@ def get_status_date(
 ) -> Optional[str]:
     oppstart = reported_data.get("Oppstart")
     status = reported_data.get("Status")
+
     if status.get("ErArbeidAvsluttet"):
         return get_today_date()
     else:
+        next_eval_date(oppstart.get("ForventetSluttdato"),status)
+        
         return oppstart.get("ForventetSluttdato")
 
 
@@ -421,3 +454,16 @@ def is_before_time_delta(date: str, time_delta: Optional[int]=None) -> bool:
     naive_dt = datetime.strptime(date, "%Y-%m-%d")
     formated_date = naive_dt.replace(tzinfo=timezone.utc)
     return formated_date < datetime.now(pytz.UTC) - timedelta(days=time_delta)
+
+def parse_date(date_str: str) -> datetime:
+    # Case 1: full ISO with Z (UTC)
+    if "T" in date_str and date_str.endswith("Z"):
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+    
+    # Case 2: plain date (no time info) → assume midnight UTC
+    elif len(date_str) == 10:
+        return datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    
+    # Fallback: try more general parsing
+    else:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
