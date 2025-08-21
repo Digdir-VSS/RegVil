@@ -350,28 +350,34 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
 def next_eval_date(date_str: str, status: str | None) -> date:
     given_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     cutoff_date = date(2025, 12, 1)
-    today = date.today()
-    # Case 1: status is None and date < cutoff → return same date
-    if status is None and given_date < cutoff_date:
-        if given_date < today:
-            return today
+
+    def next_deadline(d: date) -> date:
+        """Find the closest coming 1st Feb or 1st Sep after or equal to given date."""
+        year = d.year
+        feb = date(year, 1, 17)
+        sep = date(year, 8, 17)
+
+        if d < feb:
+            return feb
+        elif d < sep:
+            return sep
         else:
-            return given_date
+            return date(year + 1, 1, 17)
 
-    # Case 2: find next 1st Feb or 1st Sep after given_date
-    year = given_date.year
-    feb = date(year, 2, 1)
-    sep = date(year, 9, 1)
+    # Case 1: status is None and before cutoff
+    if status is None and given_date < cutoff_date:
+        return given_date
 
-    # If given date is before Feb 1 → return Feb 1
-    if given_date < feb:
-        return feb
-    # If before Sep 1 → return Sep 1
-    elif given_date < sep:
-        return sep
-    # Otherwise → return Feb 1 of next year
+    # Case 2: status is None and after/equal cutoff → next deadline
+    if status is None:
+        return next_deadline(given_date)
+
+    # Case 3: status is not None
+    nd = next_deadline(date.today())
+    if given_date < nd:
+        return given_date
     else:
-        return date(year + 1, 2, 1)
+        return nd
     
 def get_initiell_date(reported_data: DataModel, time_delta: str) -> Optional[str]:
     initiell = reported_data.get("Initiell")
