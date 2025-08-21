@@ -84,12 +84,13 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                 logging.info(f"GET_SKJEMA:Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
                 if config.app_config.app_name == "regvil-2025-status" and report_data.get("Status").get("ErArbeidAvsluttet") == False:
                     app_name = config.app_config.app_name
-                elif config.app_config.app_name == "regvil-2025-oppstart" and not is_before_time_delta(report_data.get("Initiell").get("DatoPaabegynt")):
+                    regvil_instance_client.delete_tag(party_id,instance_id,meta_data.get("id"),digitaliseringstiltak_report_id)
+                elif config.app_config.app_name == "regvil-2025-oppstart" and not report_data.get("Initiell").get("ErTiltaketPaabegynt"):
                     app_name = config.app_config.app_name
+                    regvil_instance_client.delete_tag(party_id,instance_id,meta_data.get("id"),digitaliseringstiltak_report_id)
                 else:
                     app_name = config.workflow_dag.get_next(app_name)
                     
-                print({"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": app_name, "prefill_data": report_data})
                 return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": app_name, "prefill_data": report_data}, 200
       
             except ValueError:

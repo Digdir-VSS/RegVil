@@ -350,10 +350,13 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
 def next_eval_date(date_str: str, status: str | None) -> date:
     given_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     cutoff_date = date(2025, 12, 1)
-
+    today = date.today()
     # Case 1: status is None and date < cutoff → return same date
     if status is None and given_date < cutoff_date:
-        return given_date
+        if given_date < today:
+            return today
+        else:
+            return given_date
 
     # Case 2: find next 1st Feb or 1st Sep after given_date
     year = given_date.year
@@ -388,7 +391,7 @@ def get_oppstart_date(reported_data: DataModel, time_delta: str) -> str:
             
     else:
         status = reported_data.get("Status")
-        next_date = next_eval_date(oppstart.get("ForventetSluttdato"), status)
+        next_date = next_eval_date(initiell.get("DatoPaabegynt"), status)
         return next_date.strftime("%Y-%m-%d")
         # result_date = add_time_delta(oppstart.get("ForventetSluttdato"), time_delta)
         # if check_date_before(result_date, get_today_date()):
@@ -405,9 +408,9 @@ def get_status_date(
     if status.get("ErArbeidAvsluttet"):
         return get_today_date()
     else:
-        next_eval_date(oppstart.get("ForventetSluttdato"),status)
+        next_date = next_eval_date(oppstart.get("ForventetSluttdato"),status)
         
-        return oppstart.get("ForventetSluttdato")
+        return next_date.strftime("%Y-%m-%d")
 
 
 def get_slutt_date(

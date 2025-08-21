@@ -34,7 +34,7 @@ def main() -> None:
         config,
     )
     tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
-    logging.info(f"Processing {len(test_prefill_data)} organizations")
+    logging.info(f"UPLOAD:Processing {len(test_prefill_data)} organizations")
 
 
     for prefill_data_row in test_prefill_data:
@@ -43,18 +43,18 @@ def main() -> None:
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
         report_id = transform_uiid_to_tag(prefill_data_row["digitaliseringstiltak_report_id"])
 
-        logging.info(f"Processing org {org_number}, report {report_id}")
+        logging.info(f"UPLOAD:Processing org {org_number}, report {report_id}")
 
         if regvil_instance_client.instance_created(
             org_number, report_id
         ):
             logging.info(
-                f"Skipping org {org_number} and report {report_id}- already in storage"
+                f"UPLOAD:Skipping org {org_number} and report {report_id}- already in storage"
             )
             continue
 
         logging.info(
-            f"Creating new instance for org {org_number} and report id {report_id}"
+            f"UPLOAD:Creating new instance for org {org_number} and report id {report_id}"
         )
         files = create_payload(org_number, config.app_config.visibleAfter, config, data_model)
         created_instance = regvil_instance_client.post_new_instance(files)
@@ -66,7 +66,7 @@ def main() -> None:
             )
 
             logging.info(
-                f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
+                f"UPLOAD:Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
             )
             party_id, instance_id = split_party_instance_id(instance_meta_data["id"])
             #New code to handle instance data
@@ -77,7 +77,7 @@ def main() -> None:
             )
             if instance_data.status_code != 200:
                 logging.error(
-                    f"Failed to retrieve instance data for org nr {org_number}/ report id {report_id}: {instance_data.status_code}"
+                    f"UPLOAD:Failed to retrieve instance data for org nr {org_number}/ report id {report_id}: {instance_data.status_code}"
                 )
                 
             instance_data_file = instance_data.json()
@@ -98,13 +98,13 @@ def main() -> None:
                 report_id,
             )
             if tag_result.status_code == 201:
-                logging.info(f"Successfully tagged instance for org {org_number}")
+                logging.info(f"UPLOAD:Successfully tagged instance for org {org_number}")
             else:
-                logging.error(f"Failed to tag instance for org {org_number}")
+                logging.error(f"UPLOAD:Failed to tag instance for org {org_number}")
 
         else:
             logging.error(
-                f"Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}"
+                f"UPLOAD:Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}"
             )
             try:
                 error_details = created_instance.json()
