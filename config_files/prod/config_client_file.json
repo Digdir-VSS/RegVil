@@ -1,0 +1,7 @@
+{
+    "base_app_url": "https://digdir.apps.altinn.no", 
+    "base_platfrom_url": "https://platform.altinn.no/storage/api/v1/instances",
+    "base_varsling_url": "https://platform.altinn.no/notifications/api/v1",
+    "application_owner_organisation": "digdir", 
+    "environment": "prod"
+}

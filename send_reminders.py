@@ -26,11 +26,14 @@ apps = [
     "regvil-2025-slutt",
 ]
 
-def get_latest_notification_date(tag: List[str], app: str) -> List[datetime]:
+def get_latest_notification_date(tag: List[str], app: str, delta:int) -> bool:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
-        return [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent]
+        now = datetime.now(timezone.utc)
+        notification_dates = [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent if read_blob(blob)["event_type"] == "Varsling1Send" ]
+        time_delta = timedelta(days=delta)
+        return [date for date in notification_dates if date > (now - time_delta) and date <= now]
 
 def check_instance_active(instance_id, instance_meta, tag) -> bool:
     if instance_meta.get("isHardDeleted"):

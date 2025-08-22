@@ -4,9 +4,10 @@ from pathlib import Path
 import json
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-
+import os 
+from dotenv import load_dotenv
 from config.utils import validate_initiell_prefill_data, transform_initiell_data_to_nested_with_prefill, get_status_date, get_initiell_date, get_oppstart_date, get_slutt_date
-
+load_dotenv()
 PREFILL_TRANSFORMERS = {
     "regvil-2025-initiell": transform_initiell_data_to_nested_with_prefill,
 }
@@ -113,7 +114,7 @@ def load_full_config(base_path: Path, app_name: str, env: str) -> APIConfig:
     workflow_dag = WorkflowDAG(_load_json(base_path / env / "workflow_DAG.json"))
     credential = DefaultAzureCredential()
     secret_client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
-    secret_value = secret_client.get_secret("rapdigtest").value
+    secret_value = secret_client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME")).value
     app_configs = _load_json(base_path / env / "app_config.json")
 
     return APIConfig(

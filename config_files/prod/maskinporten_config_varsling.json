@@ -1,0 +1,5 @@
+{
+    "kid":"regvil-app-TEST.2025-08-19",
+    "client_id":"c5e82235-7bab-496e-b28c-751566a6f810",
+    "scope":"altinn:serviceowner/notifications.create altinn:serviceowner/notifications.read altinn:events.subscribe"
+}
