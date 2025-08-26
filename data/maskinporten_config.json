@@ -1,5 +1,5 @@
 {
-    "kid":"RapDig_maskinporten-TEST.2025-05-22",
-    "client_id":"387ff46c-222f-412b-ab63-3abf0a2704bc",
+    "kid":"regvil-app-TEST.2025-08-19",
+    "client_id":"c5e82235-7bab-496e-b28c-751566a6f810",
     "scope":"altinn:serviceowner/instances.read altinn:serviceowner/instances.write altinn:serviceowner altinn:serviceowner/notifications.create altinn:serviceowner/notifications.read altinn:events.subscribe"
 }
