@@ -74,7 +74,7 @@ def main():
             logging.info(f"NOTIFICATION:Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
         else:
             logging.warning(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
-        break
+            print(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
     logging.info(f"NOTIFICATION:Successfully send out all notifications")
 
 
