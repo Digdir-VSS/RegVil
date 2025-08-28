@@ -10,7 +10,7 @@
       "tag_download": "InitiellSkjemaDownloaded"
     },
     "emailSubject": "Registrering av tiltak i regjeringens digitaliseringsstrategi",
-    "emailBody": "Hei, \n\nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \nDet er nå klart for å registrere tiltaket i Altinn. En del av informasjonen er allerede forhåndsutfylt, men vi ber deg som kontaktperson om å logge inn på Altinn.no og fylle inn de resterende feltene. \nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
+    "emailBody": "Hei, \n\nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \n\nDet er nå klart for å registrere tiltaket i Altinn. En del av informasjonen er allerede forhåndsutfylt, men vi ber deg som kontaktperson om å logge inn på Altinn.no og fylle inn de resterende feltene. \n\nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \n\nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
   },
   "regvil-2025-oppstart": {
     "app_name": "regvil-2025-oppstart",
@@ -23,7 +23,7 @@
       "tag_download": "OppstartSkjemaDownloaded"
     },
     "emailSubject": "Oppstart av tiltak i regjeringens digitaliseringsstrategi",
-    "emailBody": "Hei, \nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, har startet opp. Vi ber deg logge inn på Altinn.no for å fylle inn nødvendig oppstartsinformasjon om tiltaket. \nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
+    "emailBody": "Hei, \n\nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \n\nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, har startet opp. Vi ber deg logge inn på Altinn.no for å fylle inn nødvendig oppstartsinformasjon om tiltaket. \n\nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \n\nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
   },
   "regvil-2025-status": {
     "app_name": "regvil-2025-status",
@@ -36,7 +36,7 @@
       "tag_download": "StatusSkjemaDownloaded"
     },
     "emailSubject": "Status for tiltak i regjeringens digitaliseringsstrategi",
-    "emailBody": "Hei, \nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, er i gang. Vi ber deg logge inn på Altinn.no for å rapportere status for fremdriften. \nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
+    "emailBody": "Hei, \n\nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \n\nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, er i gang. Vi ber deg logge inn på Altinn.no for å rapportere status for fremdriften. \n\nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \n\nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
   },
   "regvil-2025-slutt": {
     "app_name": "regvil-2025-slutt",
@@ -49,6 +49,6 @@
       "tag_download": "SluttSkjemaDownloaded"
     },
     "emailSubject": "Sluttrapportering for tiltak i regjeringens digitaliseringsstrategi",
-    "emailBody": "Hei, \nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, er avsluttet. Vi ber deg logge inn på Altinn.no for å gjennomføre en sluttrapportering. \nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
+    "emailBody": "Hei, \n\nDu mottar denne e-posten fordi du er registrert som kontaktperson for ett eller flere tiltak i regjeringens digitaliseringsstrategi «Fremtidens digitale Norge – 2025 til 2030». \n\nDet er nå registrert at tiltaket din virksomhet er ansvarlig for, er avsluttet. Vi ber deg logge inn på Altinn.no for å gjennomføre en sluttrapportering. \n\nFormålet med rapporteringen er å sikre god oppfølging av strategien, og vurdere i hvilken grad målene nås. Informasjonen vil også danne grunnlag for bedre styring og samordning, samt bidra til å identifisere hindringer, avhengigheter og eventuelle behov for nye tiltak. \n\nTakk for at du bidrar i dette arbeidet \n\nVennlig hilsen \nDigitaliseringsdirektoratet"
   }
 }
