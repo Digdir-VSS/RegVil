@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict, Optional, Tuple, List
 import requests
 import logging
@@ -7,7 +8,7 @@ import datetime as dt
 from unittest.mock import Mock
 
 from auth.exchange_token_funcs import exchange_token
-
+from config.config_loader import APIConfig
 
 def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) -> Dict[str, str]:
     if not list_of_data_instance_meta_info:
@@ -21,7 +22,6 @@ def get_meta_data_info(list_of_data_instance_meta_info: List[Dict[str, str]]) ->
             return instance
         else:
             continue
-
     raise ValueError("No instance with dataType='DataModel' and contentType='application/xml' or 'application/json' was found.")
 
 def extract_instances_ids(data_storage_extract):
@@ -29,8 +29,6 @@ def extract_instances_ids(data_storage_extract):
     for instance in data_storage_extract["instances"]:
         if instance.get("data", []):
             instance_data_meta_data = get_meta_data_info(instance["data"])
-
-
             instances.append(
             {"instanceOwnerPartyId": instance["instanceOwner"]["partyId"], 
             "organisationNumber": instance["instanceOwner"].get("organisationNumber", ""), 
@@ -57,18 +55,22 @@ def make_api_call(method: str, url: str, headers: Dict[str, str], data: Optional
             return response
         elif response.status_code == 404:
             logging.warning(f"Resource not found: {method} {url}")
+            return response
         elif response.status_code == 500:
             logging.warning(f"Error code {response.status_code} Error message {response.json()}")
+            return response
         elif response.status_code == 403:
             logging.warning(f"Access denied: {method} {url}")
+            return response
         elif response.status_code == 401:
             logging.warning(f"Unauthorized access - check authentication token")
+            return response
+        elif response.status_code == 400:
+            logging.warning(f"Bad Request")
+            return response
         else:
             logging.warning(f"API call failed with status {response.status_code}: {response.text}")
-        
-        if response.status_code >= 400:
-            response.raise_for_status()
-        return response
+        return None
             
     except requests.exceptions.ConnectionError:
         logging.error(f"Connection error when calling {url}")
@@ -187,7 +189,18 @@ def mock_post_new_instance(header: Dict[str, str], files: Dict[str, Tuple[str, s
 
 class AltinnInstanceClient:
 
-    def __init__(self, base_app_url: str, base_platfrom_url: str,  application_owner_organisation: str, appname: str, maskinport_client: str, secret_value: str, maskinporten_endpoint: str):
+    def __init__(
+        self,
+        base_app_url: str,
+        base_platfrom_url: str,
+        application_owner_organisation: str,
+        appname: str,
+        maskinport_client_id: str,
+        maskinport_kid: str,
+        maskinport_scope: str,
+        secret_value: str,
+        maskinporten_endpoint: str,
+    ):
         self.base_app_url = base_app_url
         self.base_platfrom_url = base_platfrom_url
         self.application_owner_organisation = application_owner_organisation
@@ -195,44 +208,45 @@ class AltinnInstanceClient:
         self.basePathApp = f"{self.base_app_url}/{self.application_owner_organisation}/{self.appname}/instances"
         self.basePathPlatform = f"{self.base_platfrom_url}"
                 # Add token management
-        self.maskinport_client = maskinport_client
+        self.maskinport_client_id = maskinport_client_id
+        self.maskinport_kid = maskinport_kid
+        self.maskinport_scope = maskinport_scope
         self.secret_value = secret_value
         self.maskinporten_endpoint = maskinporten_endpoint
 
-    def _get_headers(self, content_type=None):
+    def _get_headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
         """Get fresh headers with new token"""
         token = exchange_token(
-            self.maskinport_client, 
-            self.secret_value, 
-            self.maskinporten_endpoint
+            maskinporten_endpoint=self.maskinporten_endpoint,
+            secret=self.secret_value,
+            client_id=self.maskinport_client_id,
+            kid=self.maskinport_kid,
+            scope=self.maskinport_scope,
         )
-        headers = {
-            "accept": "application/json",
-            "Authorization": f"Bearer {token}"
-        }
+        headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
         if content_type:
             headers["Content-Type"] = content_type
         return headers
 
     @classmethod
-    def init_from_config(cls, app_config_file: Dict[str, str], maskinport_config_file: Dict[str, str]):
+    def init_from_config(cls, api_config: APIConfig) -> AltinnInstanceClient:
         return cls(
-            base_app_url=app_config_file["base_app_url"],
-            base_platfrom_url=app_config_file["base_platfrom_url"],
-            application_owner_organisation=app_config_file["application_owner_organisation"], 
-            appname=app_config_file["appname"], 
-            maskinport_client=maskinport_config_file["maskinport_client"],
-            secret_value=maskinport_config_file["secret_value"], 
-            maskinporten_endpoint=maskinport_config_file["maskinporten_endpoint"]
+            base_app_url=api_config.altinn_client.base_app_url,
+            base_platfrom_url=api_config.altinn_client.base_platfrom_url,
+            application_owner_organisation=api_config.altinn_client.application_owner_organisation,
+            appname=api_config.app_config.app_name,
+            maskinport_client_id=api_config.maskinporten_config_instance.client_id,
+            maskinport_kid=api_config.maskinporten_config_instance.kid,
+            maskinport_scope=api_config.maskinporten_config_instance.scope,
+            secret_value=api_config.secret_value,
+            maskinporten_endpoint=api_config.maskinporten_endpoint,
         )
     
-    def get_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
 
-    def get_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def get_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}"
         return make_api_call(method="GET", url=url, headers=self._get_headers("application/json"))
     
@@ -266,13 +280,11 @@ class AltinnInstanceClient:
                 return True
         return False
     
-    def complete_instance(self, instanceOwnerPartyId: str, instanceGuid: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def complete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/complete"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"))
     
-    def update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def update_substatus(self, instanceOwnerPartyId: str, instance_id: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/substatus"
         payload = {
             "label": "skjema_instance_created",
@@ -280,10 +292,18 @@ class AltinnInstanceClient:
         }
         return make_api_call(method="PUT", url=url, headers=self._get_headers(), data=json.dumps(payload))
     
-    def tag_instance_data(self, instanceOwnerPartyId: str, instanceGuid: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
-        instance_id = instanceGuid.split("/")[1]
+    def tag_instance_data(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"), data=json.dumps(tag))
     
     def mock_test_update_substatus(self, instanceOwnerPartyId: str, instanceGuid: str, digitaliseringstiltak_report_id: str, header: Optional[Dict[str, str]] = None):
         return mock_update_substatus(instanceOwnerPartyId, instanceGuid, digitaliseringstiltak_report_id)
+    
+    def delete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
+        url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}?hard=true"
+        # return url, self._get_headers("application/json")
+        return make_api_call(method="DELETE", url=url, headers=self._get_headers("application/json"))
+    
+    def delete_tag(self, instanceOwnerPartyId: str, instance_id: str, dataGuid: str, tag: str, header: Optional[Dict[str, str]] = None):
+        url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/data/{dataGuid}/tags/{tag}"
+        return make_api_call(method="DELETE", url=url, headers=self._get_headers("application/json"))

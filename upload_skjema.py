@@ -1,100 +1,123 @@
-from typing import Any, Dict
+from typing import Any
 from azure.keyvault.secrets import SecretClient
-from azure.identity import DefaultAzureCredential 
+from azure.identity import DefaultAzureCredential
 from pathlib import Path
-import json
+import re
 import logging
+from dotenv import load_dotenv
+import os
 
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
-from clients.instance_logging import InstanceTracker, validate_prefill_data, transform_flat_to_nested_with_prefill
+from clients.instance_logging import InstanceTracker
+from config.config_loader import load_full_config
+from config.utils import read_blob, create_payload, split_party_instance_id
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filename=Path(__file__).parent / "data" / "altinn_logging.log"
-)
-logger = logging.getLogger(__name__)
+load_dotenv()
 
 credential = DefaultAzureCredential()
-client = SecretClient(vault_url="https://keyvaultvss.vault.azure.net/", credential=credential)
-secret = client.get_secret("rapdigtest")
+client = SecretClient(
+    vault_url=os.getenv("MASKINPORTEN_SECRET_VAULT_URL"), credential=credential
+)
+secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
-def load_in_json(path_to_json_file: Path) -> Dict[str, Any]:
-    with open(path_to_json_file, 'r', encoding='utf-8') as file:
-        return json.load(file)
+def transform_uiid_to_tag(digitaliseringstiltak_report_id: str):
+    return "".join(re.findall(r"[a-zA-Z]+",digitaliseringstiltak_report_id))
 
-def main():
-    logger.info("Starting Altinn survey sending instance processing")
-    maskinport_client = load_in_json(Path(__file__).parent / "data" / "maskinporten_config.json")
-    maskinporten_endpoints = load_in_json(Path(__file__).parent / "data" / "maskinporten_endpoints.json")
-    test_config_client_file = load_in_json(Path(__file__).parent / "data" / "test_config_client_file.json")
-    maskinporten_endpoint = maskinporten_endpoints[test_config_client_file["environment"]]
-    test_prefill_data = load_in_json(Path(__file__).parent / "data" / "test_virksomheter_prefill_with_uuid.json")
+def main() -> None:
+    logging.info("Starting Altinn survey sending instance processing")
+    path_to_config_folder = Path(__file__).parent / "config_files"
+    config = load_full_config(path_to_config_folder, "regvil-2025-initiell", os.getenv("ENV"))
+    test_prefill_data = read_blob(f"{os.getenv("ENV")}/virksomheter_prefill_with_uuid.json")
 
-    regvil_instance_client = AltinnInstanceClient.init_from_config(test_config_client_file, {"maskinport_client": maskinport_client, "secret_value": secret_value, "maskinporten_endpoint": maskinporten_endpoint})
+    regvil_instance_client = AltinnInstanceClient.init_from_config(
+        config,
+    )
+    tracker = InstanceTracker.from_directory(f"{os.getenv("ENV")}/event_log/")
+    logging.info(f"UPLOAD:Processing {len(test_prefill_data)} organizations")
 
-    tracker = InstanceTracker.from_log_file(Path(__file__).parent / "data" / "instance_log" / "instance_log.json")
-    logger.info(f"Processing {len(test_prefill_data)} organizations")
 
-    for prefill_data_row in test_prefill_data[0:1]:
-        #validate_prefill_data(prefill_data_row)
-        data_model = transform_flat_to_nested_with_prefill(prefill_data_row)
+    for prefill_data_row in test_prefill_data:
+        config.app_config.validate_prefill_data(prefill_data_row)
+        data_model = config.app_config.get_prefill_data(prefill_data_row)
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
-        report_id = prefill_data_row["digitaliseringstiltak_report_id"]
+        report_id = transform_uiid_to_tag(prefill_data_row["digitaliseringstiltak_report_id"])
 
-        logger.info(f"Processing org {org_number}, report {report_id}")
+        logging.info(f"UPLOAD:Processing org {org_number}, report {report_id}")
 
-        if tracker.has_processed_instance(org_number, report_id):
-            logger.info(f"Skipping org {org_number} and report {report_id} - already in instance log")
+        if regvil_instance_client.instance_created(
+            org_number, report_id
+        ):
+            logging.info(
+                f"UPLOAD:Skipping org {org_number} and report {report_id}- already in storage"
+            )
             continue
 
-        if regvil_instance_client.instance_created(org_number, test_config_client_file["tag"]):
-            logger.info(f"Skipping org {org_number} and report {report_id}- already in storage")
-            continue
-        
-        logger.info(f"Creating new instance for org {org_number} and report id {report_id}")
-
-        instance_data = {"appId" : "digdir/regvil-2025-initiell",    
-                "instanceOwner": {"personNumber": None,
-                "organisationNumber": data_model["Prefill"]["AnsvarligVirksomhet"]["Organisasjonsnummer"]},
-                "dueBefore":"2025-09-01T12:00:00Z",
-                "visibleAfter": "2025-06-29T00:00:00Z"
-        }
-        files = {
-                    'instance': ('instance.json', json.dumps(instance_data, ensure_ascii=False), 'application/json'),
-                    'DataModel': ('datamodel.json', json.dumps(data_model, ensure_ascii=False), 'application/json')
-        }
-
+        logging.info(
+            f"UPLOAD:Creating new instance for org {org_number} and report id {report_id}"
+        )
+        files = create_payload(org_number, config.app_config.visibleAfter, config, data_model)
         created_instance = regvil_instance_client.post_new_instance(files)
 
         if created_instance.status_code == 201:
-                instance_meta_data = created_instance.json()
-                instance_client_data_meta_data = get_meta_data_info(instance_meta_data["data"])
+            instance_meta_data = created_instance.json()
+            instance_client_data_meta_data = get_meta_data_info(
+                instance_meta_data["data"]
+            )
 
-                logger.info(f"Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}")
-                tracker.logging_instance(prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"], prefill_data_row["digitaliseringstiltak_report_id"], created_instance.json(), "initiell_skjema_instance_created")
-                tracker.save_to_disk()
-                tag_result = regvil_instance_client.tag_instance_data(instance_meta_data["instanceOwner"]["partyId"], instance_meta_data["id"], instance_client_data_meta_data["id"], "InitiellSkjemaLevert")
-                if tag_result.status_code == 201:
-                    logger.info(f"Successfully tagged instance for org {org_number}")
-                else:
-                    logger.error(f"Failed to tag instance for org {org_number}")
+            logging.info(
+                f"UPLOAD:Successfully created instance for org nr {org_number}/ report id {report_id}: {instance_meta_data['id']}"
+            )
+            party_id, instance_id = split_party_instance_id(instance_meta_data["id"])
+            #New code to handle instance data
+            instance_data = regvil_instance_client.get_instance_data(
+                party_id,
+                instance_id,
+                instance_client_data_meta_data.get('id')
+            )
+            if instance_data.status_code != 200:
+                logging.error(
+                    f"UPLOAD:Failed to retrieve instance data for org nr {org_number}/ report id {report_id}: {instance_data.status_code}"
+                )
+                
+            instance_data_file = instance_data.json()
+            # Log the instance creation & save it
+            tracker.logging_instance(
+                instance_id,
+                prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"],
+                report_id,
+                instance_meta_data,
+                instance_data_file,
+                config.app_config.tag["tag_instance"],
+            )
 
+            tag_result = regvil_instance_client.tag_instance_data(
+                party_id,
+                instance_id,
+                instance_client_data_meta_data["id"],
+                report_id,
+            )
+            if tag_result.status_code == 201:
+                logging.info(f"UPLOAD:Successfully tagged instance for org {org_number}")
+            else:
+                logging.error(f"UPLOAD:Failed to tag instance for org {org_number}")
 
         else:
-                logger.error(f"Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}")
-                try:
-                    error_details = created_instance.json()
-                    error_msg = error_details.get('error', 'Unknown error')
-                except:
-                    error_msg = created_instance.text or 'No error details'
+            logging.error(
+                f"UPLOAD:Failed to create instance for org nr {org_number}/ report id {report_id}: Status {created_instance.status_code}"
+            )
+            try:
+                error_details = created_instance.json()
+                error_msg = error_details.get("error", "Unknown error")
+            except Exception:
+                error_msg = created_instance.text or "No error details"
 
-                    logger.warning(f"API Error: Org {prefill_data_row['AnsvarligVirksomhet.Organisasjonsnummer']}, "
-                                    f"Report {prefill_data_row['digitaliseringstiltak_report_id']} - "
-                                    f"Status: {created_instance.status_code} - "
-                                    f"Error message: {error_msg}")
-                
+                logging.warning(
+                    f"API Error: Org {prefill_data_row['AnsvarligVirksomhet.Organisasjonsnummer']}, "
+                    f"Report {prefill_data_row['digitaliseringstiltak_report_id']} - "
+                    f"Status: {created_instance.status_code} - "
+                    f"Error message: {error_msg}"
+                )
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,5 @@
+{
+    "kid":"RapDig_maskinporten-TEST.2025-05-22",
+    "client_id":"387ff46c-222f-412b-ab63-3abf0a2704bc",
+    "scope":"altinn:serviceowner/notifications.create altinn:serviceowner/notifications.read altinn:events.subscribe"
+}
