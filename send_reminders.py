@@ -8,8 +8,9 @@ import os
 from datetime import datetime, timezone, timedelta
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from config.config_loader import load_full_config
-from config.utils import list_blobs_with_prefix, read_blob
+from config.utils import list_blobs_with_prefix, read_blob, parse_date
 from send_warning import run as send_warning
+import pytz
 
 load_dotenv()
 credential = DefaultAzureCredential()
@@ -25,11 +26,14 @@ apps = [
     "regvil-2025-slutt",
 ]
 
-def get_latest_notification_date(tag: List[str], app: str) -> List[datetime]:
+def get_latest_notification_date(tag: List[str], app: str, delta:int) -> bool:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
-        return [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent]
+        now = datetime.now(timezone.utc)
+        notification_dates = [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent if read_blob(blob)["event_type"] == "Varsling1Send" ]
+        time_delta = timedelta(days=delta)
+        return [date for date in notification_dates if date > (now - time_delta) and date <= now]
 
 def check_instance_active(instance_id, instance_meta, tag) -> bool:
     if instance_meta.get("isHardDeleted"):
@@ -65,9 +69,13 @@ def run() -> None:
             instance_meta = inst_resp.json()
             instance_data = get_meta_data_info(instance_meta.get("data"))
             visibleAfter = instance_meta.get("visibleAfter")
-            visibleAfterformated = datetime.fromisoformat(visibleAfter)
+            visibleAfter = parse_date(visibleAfter)
+            visibleAfterformated = visibleAfter.replace(tzinfo=timezone.utc)
+            # visibleAfterformated = datetime.fromisoformat(visibleAfter)
             date_created = get_meta_data_info(instance_data).get("created")
-            dateCreatedFormated = datetime.fromisoformat(date_created)
+            date_created = parse_date(date_created)
+            dateCreatedFormated = date_created.replace(tzinfo=timezone.utc)
+            # dateCreatedFormated = datetime.fromisoformat(date_created)
             dataguid = instance_data.get("id")
             tag = instance_data.get("tags")
 
@@ -81,10 +89,10 @@ def run() -> None:
 
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
                  continue
-            if dateCreatedFormated < datetime.now(timezone.utc) - timedelta(days=14):
+            if dateCreatedFormated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
                 continue
-            if visibleAfterformated + timedelta(days=14) > datetime.now(timezone.utc):
+            if visibleAfterformated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(
                     f"Instance {instance_id} is still within the 14-day visibility period."
                 )

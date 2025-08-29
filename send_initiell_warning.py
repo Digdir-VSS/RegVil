@@ -23,7 +23,7 @@ secret_value = secret.value
 env = os.getenv("ENV")
 
 def main():
-    logging.info("Starting sending notifications for regvil-2025-initiell")
+    logging.info("NOTIFICATION:Starting sending notifications for regvil-2025-initiell")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, "regvil-2025-initiell", env)
 
@@ -31,7 +31,7 @@ def main():
     varsling_client = AltinnVarslingClient.init_from_config(config)
     test_prefill_data = read_blob(f"{env}/virksomheter_prefill_with_uuid.json")
     
-    for prefill_data_row in test_prefill_data[2:]:
+    for prefill_data_row in test_prefill_data:
         config.app_config.validate_prefill_data(prefill_data_row)
         recipient_email = prefill_data_row["Kontaktperson.EPostadresse"]
         org_number = prefill_data_row["AnsvarligVirksomhet.Organisasjonsnummer"]
@@ -52,10 +52,10 @@ def main():
         appname=config.app_config.app_name
         )
         if not response:
-            logging.error(f"Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}")
+            logging.error(f"NOTIFICATION:Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}")
             continue
         if response.status_code != 201:
-            logging.error(f"Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}. Status code: {response.text}")
+            logging.error(f"NOTIFICATION:Failed to send notification to {recipient_email} for org number {org_number} and report ID {report_id}. Status code: {response.text}")
             continue
         if response.status_code == 201:
             response_data = response.json()
@@ -71,11 +71,11 @@ def main():
                 recipientEmail=recipient_email,
                 event_type="Varsling1Send"
             ) 
-            logging.info(f"Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
+            logging.info(f"NOTIFICATION:Notification sent successfully to {org_number} {report_id} with shipment ID: {shipment_id}")
         else:
-            logging.warning(f"Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
-        break
-    logging.info(f"Successfully send out all notifications")
+            logging.warning(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
+            print(f"NOTIFICATION:Failed to notify org number: {org_number} report_id: {report_id} appname: {config.app_config.app_name}")
+    logging.info(f"NOTIFICATION:Successfully send out all notifications")
 
 
 if __name__ == "__main__":

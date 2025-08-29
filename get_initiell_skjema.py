@@ -6,10 +6,11 @@ import logging
 import json
 from dotenv import load_dotenv
 import os
-
+from datetime import datetime, timezone, timedelta
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from clients.instance_logging import InstanceTracker, get_reportid_from_blob
 from config.config_loader import load_full_config
+from config.utils import is_before_time_delta
 
 load_dotenv()
 
@@ -44,7 +45,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
     instance_meta = regvil_instance_client.get_instance(party_id, instance_id)
 
     if not instance_meta:
-        logging.error(f"Failed to fetch party id: {party_id} instance id: {instance_id}")
+        logging.error(f"GET_SKJEMA:Failed to fetch party id: {party_id} instance id: {instance_id}")
         return {}, 502
     if instance_meta.status_code not in [200, 201]:
         return {}, instance_meta.status_code
@@ -52,7 +53,7 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
     try:
         instance_meta_info = instance_meta.json()
     except ValueError:
-        logging.error(f"Error processing party id: {party_id}, instance id {instance_id}")
+        logging.error(f"GET_SKJEMA:Error processing party id: {party_id}, instance id {instance_id}")
         return {}, 502
     meta_data = get_meta_data_info(instance_meta_info.get("data"))
 
@@ -63,10 +64,10 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                     meta_data.get("id")
                 )
         if not instance_data:
-            logging.error(f"Failed to fetch instance data for party id: {party_id} instance id: {instance_id}")
+            logging.error(f"GET_SKJEMA:Failed to fetch instance data for party id: {party_id} instance id: {instance_id}")
             return {}, 502
         if instance_data.status_code not in [200, 201]:
-            logging.error(f"Failed to fetch instance data for party id: {party_id} instance id: {instance_id}. Status code: {instance_data.status_code}")
+            logging.error(f"GET_SKJEMA:Failed to fetch instance data for party id: {party_id} instance id: {instance_id}. Status code: {instance_data.status_code}")
             return {}, instance_data.status_code
         else:
             try:
@@ -80,19 +81,22 @@ def run(party_id: str, instance_id: str, app_name: str) -> Tuple[Dict[str, str],
                     config.app_config.tag["tag_download"]
                 )
             
-                logging.info(f"Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
+                logging.info(f"GET_SKJEMA:Successfully downloaded: OrgNumber {instance_meta_info['instanceOwner']['organisationNumber']} App name: {app_name} InstanceId: {instance_id}) DigireportId: {digitaliseringstiltak_report_id}")
                 if config.app_config.app_name == "regvil-2025-status" and report_data.get("Status").get("ErArbeidAvsluttet") == False:
                     app_name = config.app_config.app_name
+                    regvil_instance_client.delete_tag(party_id,instance_id,meta_data.get("id"),digitaliseringstiltak_report_id)
+                elif config.app_config.app_name == "regvil-2025-oppstart" and not report_data.get("Initiell").get("ErTiltaketPaabegynt"):
+                    app_name = config.app_config.app_name
+                    regvil_instance_client.delete_tag(party_id,instance_id,meta_data.get("id"),digitaliseringstiltak_report_id)
                 else:
                     app_name = config.workflow_dag.get_next(app_name)
-
-
+                    
                 return {"org_number": instance_meta_info["instanceOwner"]["organisationNumber"], "digitaliseringstiltak_report_id": digitaliseringstiltak_report_id ,"dato": config.app_config.get_date(report_data), "app_name": app_name, "prefill_data": report_data}, 200
       
             except ValueError:
-                logging.error(f"Error processing instance data for party id: {party_id}, instance id {instance_id}")
+                logging.error(f"GET_SKJEMA:Error processing instance data for party id: {party_id}, instance id {instance_id}")
                 return {}, 502
         
     else:
-        logging.warning(f"Already downloaded: {app_name} InstanceId: {instance_id} ReportId: {digitaliseringstiltak_report_id}")
+        logging.warning(f"GET_SKJEMA:Already downloaded: {app_name} InstanceId: {instance_id} ReportId: {digitaliseringstiltak_report_id}")
         return {}, 204

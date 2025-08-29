@@ -87,9 +87,12 @@ def exchange_token(
         client_id=client_id,
         scope=scope,
     )
+    endpoint = {"https://test.maskinporten.no/":"https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten",
+    "https://maskinporten.no/":"https://platform.altinn.no/authentication/api/v1/exchange/maskinporten"}
+    url = endpoint[maskinporten_endpoint]
     try:
         response = requests.get(
-            "https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten",
+            url,
             headers={"Authorization": f"Bearer {maskinport_token}"},
         )
         response.raise_for_status()

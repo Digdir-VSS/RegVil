@@ -1,0 +1,6 @@
+{
+    "prod": "https://maskinporten.no/",
+    "test": "https://test.maskinporten.no/",
+    "ver1": "https://ver1.maskinporten.no/",
+    "ver2": "https://ver2.maskinporten.no/"
+    }
