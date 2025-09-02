@@ -6,3 +6,4 @@ python-dotenv
 azure.keyvault
 jwcrypto
 pytz
+pandas
