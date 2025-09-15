@@ -7,7 +7,7 @@ from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
 from send_warning import run as send_notification
 from send_reminders import run as run_reminder_job
-from send_seasonal_reminders import run as send_seasonal_reminder
+from send_seasonal_reminders import run as run_seasonal_reminder_job
 
 load_dotenv()
 
@@ -18,6 +18,9 @@ def extract_ids_from_source(source_url: str):
     parts = source_url.split("/")
     return parts[-1], parts[-2], parts[-4]  # instance_id, party_id, app-name
 
+@app.route("/health")
+def health():
+    return "ok", 200
 
 @app.route("/httppost", methods=["POST"])
 def handle_event():
@@ -88,19 +91,17 @@ def send_reminder():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/send_seasonal_reminder", methods=["POST"])
-def send_reminder():
+def send_seasonal_reminder():
     try:
         api_key = request.headers.get("X-Api-Key")
         if api_key != os.getenv("REMINDER_API_KEY"):
             return jsonify({"status": "unauthorized", "reminders": []}), 401
-        result, status_code = send_seasonal_reminder()
+        result, status_code = run_seasonal_reminder_job()
         return jsonify({"status": "success", "reminders": result}), str(status_code)
 
     except Exception as e:
         logging.exception("APP:Error while processing send_reminder request")
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
