@@ -7,6 +7,7 @@ from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
 from send_warning import run as send_notification
 from send_reminders import run as run_reminder_job
+from send_seasonal_reminders import run as send_seasonal_reminder
 
 load_dotenv()
 
@@ -85,6 +86,20 @@ def send_reminder():
     except Exception as e:
         logging.exception("APP:Error while processing send_reminder request")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/send_seasonal_reminder", methods=["POST"])
+def send_reminder():
+    try:
+        api_key = request.headers.get("X-Api-Key")
+        if api_key != os.getenv("REMINDER_API_KEY"):
+            return jsonify({"status": "unauthorized", "reminders": []}), 401
+        result, status_code = send_seasonal_reminder()
+        return jsonify({"status": "success", "reminders": result}), str(status_code)
+
+    except Exception as e:
+        logging.exception("APP:Error while processing send_reminder request")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 if __name__ == "__main__":
