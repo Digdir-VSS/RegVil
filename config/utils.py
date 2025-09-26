@@ -347,11 +347,7 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
     result = base_date + time_delta
     return result.isoformat().replace("+00:00", "Z")
 
-def next_eval_date(date_str: str, status: str | None) -> date:
-    given_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    cutoff_date = date(2025, 12, 1)
-
-    def next_deadline(d: date) -> date:
+def next_deadline(d: date) -> date:
         """Find the closest coming 1st Feb or 1st Sep after or equal to given date."""
         year = d.year
         feb = date(year, 1, 17)
@@ -363,6 +359,23 @@ def next_eval_date(date_str: str, status: str | None) -> date:
             return sep
         else:
             return date(year + 1, 1, 17)
+        
+def next_eval_date(date_str: str, status: dict | None) -> date:
+    given_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    cutoff_date = date(2025, 12, 1)
+
+    # def next_deadline(d: date) -> date:
+    #     """Find the closest coming 1st Feb or 1st Sep after or equal to given date."""
+    #     year = d.year
+    #     feb = date(year, 1, 17)
+    #     sep = date(year, 8, 17)
+
+    #     if d < feb:
+    #         return feb
+    #     elif d < sep:
+    #         return sep
+    #     else:
+    #         return date(year + 1, 1, 17)
 
     # Case 1: status is None and before cutoff
     if status is None and given_date < cutoff_date:
@@ -414,7 +427,10 @@ def get_status_date(
     if status.get("ErArbeidAvsluttet"):
         return get_today_date()
     else:
-        next_date = next_eval_date(oppstart.get("ForventetSluttdato"),status)
+        if oppstart.get("ForventetSluttdato") is None:
+            next_date = next_deadline(date.today())
+        else:
+            next_date = next_eval_date(oppstart.get("ForventetSluttdato"),status)
         
         return next_date.strftime("%Y-%m-%d")
 
