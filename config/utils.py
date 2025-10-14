@@ -132,8 +132,8 @@ def validate_initiell_prefill_data(prefill_data_row: Dict[str, Any]) -> bool:
             )
     # 4. Validate email
     email = prefill_data_row["Kontaktperson.EPostadresse"]
-    if not _is_valid_email(str(email)):
-        raise PrefillValidationError(f"Invalid email format: {email}")
+    # if not _is_valid_email(str(email)):
+    #     raise PrefillValidationError(f"Invalid email format: {email}")
 
     # 5. Validate phone number
     phone = prefill_data_row["Kontaktperson.Telefonnummer"]
@@ -202,12 +202,12 @@ def _is_valid_uuid(uuid_string: str) -> bool:
     return re.match(uuid_pattern, uuid_string.lower()) is not None
 
 
-def _is_valid_email(email: str) -> bool:
-    """Validate email format"""
-    if not isinstance(email, str):
-        return False
-    email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    return re.match(email_pattern, email) is not None
+# def _is_valid_email(email: str) -> bool:
+#     """Validate email format"""
+#     if not isinstance(email, str):
+#         return False
+#     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+#     return re.match(email_pattern, email) is not None
 
 
 def _is_valid_phone(phone: str) -> bool:
