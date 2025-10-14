@@ -9,12 +9,12 @@ from clients.instance_client import make_api_call
 from config.config_loader import APIConfig
 from datetime import datetime, timezone, timedelta
 
-def validate_email(email: str) -> str:
-    email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    if re.match(email_regex, email):
-        return email
-    else:
-        raise ValueError(f"Invalid email format: {email}")
+# def validate_email(email: str) -> str:
+#     email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+#     if re.match(email_regex, email):
+#         return email
+#     else:
+#         raise ValueError(f"Invalid email format: {email}")
 
 
 class AltinnVarslingClient:
@@ -84,7 +84,7 @@ class AltinnVarslingClient:
             "idempotencyId": idempotency_id,
             "recipient": {
                 "recipientEmail": {
-                    "emailAddress": validate_email(recipient_email),
+                    "emailAddress": recipient_email,
                     "emailSettings": {
                         "subject": subject,
                         "body": body,
