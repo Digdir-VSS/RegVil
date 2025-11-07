@@ -3,14 +3,13 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 from send_reminders import get_latest_notification_date, check_instance_active, run
 
-
 @pytest.fixture
 def mock_blob_data():
     """Fixture with fake blob 'sent_time' values."""
     now = datetime.now(timezone.utc)
     return [
-        {"sent_time": (now - timedelta(days=15)).isoformat()},
-        {"sent_time": (now - timedelta(days=30)).isoformat()},
+        {"sent_time": (now - timedelta(days=15)).isoformat(), "event_type": "Varsling1Send"},
+        {"sent_time": (now - timedelta(days=30)).isoformat(), "event_type": "Varsling1Send"},
     ]
 
 
@@ -43,8 +42,8 @@ def test_run_sends_warning_only_when_conditions_met(tmp_path):
     """Test run() flow with everything mocked to trigger send_warning."""
     fake_instance_meta = {
         "data": {},
-        "visibleAfter": (datetime.now(timezone.utc) - timedelta(days=20)).isoformat(),
-        "status": {"createdBy": "user1", "lastChangedBy": "user1"},
+        "visibleAfter": (datetime.now(timezone.utc) - timedelta(days=20)).isoformat().replace("+00:00", "Z"),
+        "createdBy": "user1", "lastChangedBy": "user1",
         "isHardDeleted": False,
         "isSoftDeleted": False,
     }
@@ -60,7 +59,7 @@ def test_run_sends_warning_only_when_conditions_met(tmp_path):
     with patch("send_reminders.apps", ["regvil-2025-initiell"]), \
          patch("send_reminders.load_full_config", return_value={"dummy": "config"}), \
          patch("send_reminders.AltinnInstanceClient.init_from_config", return_value=mock_client), \
-         patch("send_reminders.get_meta_data_info", return_value={"id": "dataguid", "tags": ["tag1"]}), \
+         patch("send_reminders.get_meta_data_info", return_value={"id": "dataguid", "tags": ["tag1"],  "created": (datetime.now(timezone.utc) - timedelta(days=20)).isoformat().replace("+00:00", "Z")}), \
          patch("send_reminders.list_blobs_with_prefix", return_value=[]), \
          patch("send_reminders.read_blob", return_value={}), \
          patch("send_reminders.get_latest_notification_date", return_value=[datetime.now(timezone.utc) - timedelta(days=20)]), \
@@ -77,7 +76,7 @@ def test_run_skips_when_recent_notification():
     recent_time = (now - timedelta(days=5)).isoformat()
     fake_instance_meta = {
         "data": {},
-        "visibleAfter": (now - timedelta(days=20)).isoformat(),
+        "visibleAfter": (now - timedelta(days=20)).isoformat().replace("+00:00", "Z"),
         "status": {"createdBy": "user1", "lastChangedBy": "user1"},
         "isHardDeleted": False,
         "isSoftDeleted": False,
@@ -93,9 +92,9 @@ def test_run_skips_when_recent_notification():
 
     with patch("send_reminders.load_full_config", return_value={"dummy": "config"}), \
          patch("send_reminders.AltinnInstanceClient.init_from_config", return_value=mock_client), \
-         patch("send_reminders.get_meta_data_info", return_value={"id": "dataguid", "tags": ["tag1"]}), \
+         patch("send_reminders.get_meta_data_info", return_value={"id": "dataguid", "tags": ["tag1"],"created": (now - timedelta(days=20)).isoformat().replace("+00:00", "Z")}), \
          patch("send_reminders.list_blobs_with_prefix", return_value=["blob1"]), \
-         patch("send_reminders.read_blob", return_value={"sent_time": recent_time}), \
+         patch("send_reminders.read_blob", return_value={"sent_time": recent_time, "event_type": "Varsling1Send"}), \
          patch("send_reminders.send_warning") as mock_send:
         result, status_code = run()
         assert result == []
