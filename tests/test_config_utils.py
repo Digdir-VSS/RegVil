@@ -1,10 +1,10 @@
 import pytest
 import os
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from config.config_loader import load_full_config
-from config.utils import add_time_delta, check_date_before, get_initiell_date, get_oppstart_date, get_status_date, to_utc_aware
+from config.utils import add_time_delta, check_date_before, get_initiell_date, get_oppstart_date, get_status_date, to_utc_aware, parse_date
 
 def test_add_time_delta():
     base_date_str = "2025-07-22T12:59:42.6342741Z"
@@ -235,3 +235,34 @@ def test_check_date_before_comparison_with_aware_datetimes():
     # Reverse comparison
     result = check_date_before(later, earlier)
     assert result is False
+
+
+
+
+test_dates = [
+    ("2025-08-18T11:49:43.3529573Z", datetime(2025, 8, 18, 0, 0, tzinfo=timezone.utc)),
+    ("2025-08-14T00:00:00Z", datetime(2025, 8, 14, 0, 0, tzinfo=timezone.utc)),
+    ("2025-08-06T11:05:12.5883858Z", datetime(2025, 8, 6, 0, 0, tzinfo=timezone.utc)),
+]
+@pytest.mark.parametrize("date, expected", test_dates)
+def test_parse_date_returns_utc_aware_datetime(date, expected):
+    result = parse_date(date)
+    assert result.date() == expected.date()
+    assert result.tzinfo is not None
+    assert result.tzinfo.utcoffset(result) == timedelta(0)
+    assert result.hour == 0
+
+
+@pytest.mark.parametrize("invalid_date", [
+    "",                    # Empty string
+    None,                  # None input
+    "invalid-date",        # Non-date string
+    "2025/08/06",          # Wrong delimiter
+    "06-08-2025",          # Wrong format
+    "2025-13-40",          # Impossible date
+    "2025-08",             # Missing day
+])
+def test_parse_date_invalid_inputs(invalid_date):
+    """Ensure parse_date raises ValueError for invalid or missing inputs."""
+    with pytest.raises(ValueError):
+        parse_date(invalid_date)
