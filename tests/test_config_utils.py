@@ -243,6 +243,8 @@ test_dates = [
     ("2025-08-18T11:49:43.3529573Z", datetime(2025, 8, 18, 0, 0, tzinfo=timezone.utc)),
     ("2025-08-14T00:00:00Z", datetime(2025, 8, 14, 0, 0, tzinfo=timezone.utc)),
     ("2025-08-06T11:05:12.5883858Z", datetime(2025, 8, 6, 0, 0, tzinfo=timezone.utc)),
+    (datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+     datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0))
 ]
 @pytest.mark.parametrize("date, expected", test_dates)
 def test_parse_date_returns_utc_aware_datetime(date, expected):
