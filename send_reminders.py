@@ -26,14 +26,16 @@ apps = [
     "regvil-2025-slutt",
 ]
 
-def get_latest_notification_date(tag: List[str], app: str, delta:int) -> bool:
+def get_latest_notification_date(tag: List[str], app: str, delta: int = 14) -> bool:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
-        now = datetime.now(timezone.utc)
-        notification_dates = [datetime.fromisoformat(read_blob(blob)["sent_time"]) for blob in already_sent if read_blob(blob)["event_type"] == "Varsling1Send" ]
-        time_delta = timedelta(days=delta)
-        return [date for date in notification_dates if date > (now - time_delta) and date <= now]
+        notification_dates = []
+        for blob in already_sent:
+            blob_content = read_blob(blob)
+            if blob_content["event_type"] == "Varsling1Send":
+                notification_dates.append(datetime.fromisoformat(blob_content["sent_time"]))
+        return notification_dates
 
 def check_instance_active(instance_id, instance_meta, tag) -> bool:
     if instance_meta.get("isHardDeleted"):
@@ -68,14 +70,11 @@ def run() -> None:
 
             instance_meta = inst_resp.json()
             instance_data = get_meta_data_info(instance_meta.get("data"))
+
+            date_created = instance_data.get("created")
             visibleAfter = instance_meta.get("visibleAfter")
-            visibleAfter = parse_date(visibleAfter)
-            visibleAfterformated = visibleAfter.replace(tzinfo=timezone.utc)
-            # visibleAfterformated = datetime.fromisoformat(visibleAfter)
-            date_created = get_meta_data_info(instance_data).get("created")
-            date_created = parse_date(date_created)
-            dateCreatedFormated = date_created.replace(tzinfo=timezone.utc)
-            # dateCreatedFormated = datetime.fromisoformat(date_created)
+            visibleAfterformated = parse_date(visibleAfter)
+            dateCreatedFormated = parse_date(date_created)
             dataguid = instance_data.get("id")
             tag = instance_data.get("tags")
 
@@ -88,7 +87,8 @@ def run() -> None:
                 continue
 
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
-                 continue
+                continue
+
             if dateCreatedFormated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
                 continue
