@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 from dotenv import load_dotenv
 import os
+import json
 from datetime import datetime, timezone, timedelta
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from config.config_loader import load_full_config
@@ -26,7 +27,7 @@ apps = [
     "regvil-2025-slutt",
 ]
 
-def get_latest_notification_date(tag: List[str], app: str, delta: int = 14) -> bool:
+def get_latest_notification_date(tag: List[str], app: str) -> bool:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
@@ -56,13 +57,15 @@ def run() -> None:
     path_to_config_folder = Path(__file__).parent / "config_files"
     sent_reminders = []
     for app in apps:
-        config = load_full_config(path_to_config_folder, app, os.getenv("ENV"))
+        config =  load_full_config(path_to_config_folder, app, os.getenv("ENV"))
         regvil_instance_client = AltinnInstanceClient.init_from_config(
             config,
         )
         logging.info("Checking for instances that have not been answered")
         instance_ids = regvil_instance_client.get_stored_instances_ids()
         for instance in instance_ids:
+            print(app, instance)
+
             partyID, instance_id = instance["instanceId"].split("/")
             inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
             if inst_resp.status_code != 200:
@@ -83,19 +86,61 @@ def run() -> None:
                 continue
 
             data = data_resp.json()
+            
+            log_data = {
+                "id": tag, 
+                "deleted": instance_meta.get("isSoftDeleted"),
+                "createdBy": instance_data.get("createdBy"), 
+                "lastChangedBy": instance_data.get("lastChangedBy"), 
+                "Orgnumber": data.get("Prefill").get("AnsvarligVirksomhet").get("Organisasjonsnummer"),
+                "Orgnavn": data.get("Prefill").get("AnsvarligVirksomhet").get("Navn"),
+                "visibility_period": (datetime.now(pytz.UTC) - timedelta(days=14)).isoformat(),
+                "dateCreatedFormated": date_created, 
+                "visibleAfterformated": visibleAfter
+            }
+
             if not check_instance_active(instance_id, instance_meta, tag):
+                path_to_file = Path(__file__).parent / "data" / "test_varsling" / "not_active" / f"{app}_{instance['organisationNumber']}_send.json"
+                with open(path_to_file, "w", encoding="utf-8") as file:
+                    json.dump(log_data, file, ensure_ascii=False)
                 continue
+            notifications = get_latest_notification_date(tag, app)
+            if notifications:
+                max_time = max(get_latest_notification_date(tag, app)).isoformat()
+            else:
+                max_time = None
+            log_data = {
+                "id": tag, 
+                "deleted": instance_meta.get("isSoftDeleted"),
+                "createdBy": instance_data.get("createdBy"), 
+                "lastChangedBy": instance_data.get("lastChangedBy"), 
+                "Orgnumber": data.get("Prefill").get("AnsvarligVirksomhet").get("Organisasjonsnummer"),
+                "Orgnavn": data.get("Prefill").get("AnsvarligVirksomhet").get("Navn"),
+                "dateCreatedFormated": dateCreatedFormated.isoformat(), 
+                "visibleAfterformated": visibleAfter,
+                "visibility_period": (datetime.now(pytz.UTC) - timedelta(days=14)).isoformat(),
+                "max_time": max_time
+            }
 
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
+                path_to_file = Path(__file__).parent / "data" / "test_varsling" / "already_answered" / f"{app}_{tag[0]}_send.json"
+                with open(path_to_file, "w", encoding="utf-8") as file:
+                    json.dump(log_data, file, ensure_ascii=False)
                 continue
-
+            
             if dateCreatedFormated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
+                path_to_file = Path(__file__).parent / "data" / "test_varsling" / "instance_too_early" / f"{app}_{tag[0]}_send.json"
+                with open(path_to_file, "w", encoding="utf-8") as file:
+                    json.dump(log_data, file, ensure_ascii=False)
                 continue
             if visibleAfterformated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(
                     f"Instance {instance_id} is still within the 14-day visibility period."
                 )
+                path_to_file = Path(__file__).parent / "data" / "test_varsling" / "instance_visible_too_early" / f"{app}_{tag[0]}_send.json"
+                with open(path_to_file, "w", encoding="utf-8") as file:
+                    json.dump(log_data, file, ensure_ascii=False)
                 continue
                 
             send_notifications_times = get_latest_notification_date(tag, app)
@@ -103,6 +148,9 @@ def run() -> None:
                 continue
 
             if max(send_notifications_times)+ timedelta(days=14) > datetime.now(timezone.utc):
+                path_to_file = Path(__file__).parent / "data" / "test_varsling" / "last_reminder_too_early" / f"{app}_{tag[0]}_send.json"
+                with open(path_to_file, "w", encoding="utf-8") as file:
+                    json.dump(log_data, file, ensure_ascii=False)
                 continue
 
             org_number = (
@@ -121,7 +169,10 @@ def run() -> None:
                     "app_name": app,
                     "prefill_data": data,
                 }
-            send_warning(**file)
+            path_to_file = Path(__file__).parent / "data" / "test_varsling" / "will_send" / f"{app}_{tag[0]}_send.json"
+            with open(path_to_file, "w", encoding="utf-8") as file:
+                json.dump(log_data, file, ensure_ascii=False)
+            #send_warning(**file)
             sent_reminders.append({
                     "org_number": org_number,
                     "party_id": partyID,
