@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone, timedelta
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
+from clients.varsling_client import AltinnVarslingClient
 from config.config_loader import load_full_config
 from config.utils import list_blobs_with_prefix, read_blob, parse_date
 from send_warning import run as send_warning
@@ -111,12 +112,15 @@ def run() -> None:
             logging.info(
                     f"Instance {instance_id} is created by the same user as last changed. Instance not answered."
                 )
+
             file = {
                     "org_number": org_number,
                     "digitaliseringstiltak_report_id": tag[0],
                     "dato": dato,
                     "app_name": app,
                     "prefill_data": data,
+                    "email_subject": config.app_config.emailSubject,
+                    "email_body": config.app_config.emailBody
                 }
             send_warning(**file)
             sent_reminders.append({

@@ -22,7 +22,7 @@ secret = client.get_secret(os.getenv("MASKINPORTEN_SECRET_NAME"))
 secret_value = secret.value
 
 
-def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel) -> str:
+def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_name: str, prefill_data: DataModel, email_subject: str, email_body: str) -> str:
     logging.info("NOTIFICATION:Starting sending notifications for {app_name}")
     path_to_config_folder = Path(__file__).parent / "config_files"
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
@@ -30,8 +30,6 @@ def run(org_number: str, digitaliseringstiltak_report_id: str, dato: str, app_na
     varsling_client = AltinnVarslingClient.init_from_config(config)
     recipient_email = prefill_data.get("Prefill").get("Kontaktperson").get("EPostadresse")
     org_name = prefill_data.get("Prefill").get("AnsvarligVirksomhet").get("Navn")  
-    email_subject = config.app_config.emailSubject
-    email_body = config.app_config.emailBody
     naive_dt = parse_date(dato)
     # naive_dt = datetime.strptime(dato, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
     send_time = naive_dt.replace(tzinfo=timezone.utc)
