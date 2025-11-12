@@ -26,7 +26,7 @@ apps = [
     "regvil-2025-slutt",
 ]
 
-def get_latest_notification_date(tag: List[str], app: str, delta: int = 14) -> bool:
+def get_latest_notification_date(tag: List[str], app: str) -> bool:
         already_sent = list_blobs_with_prefix(
                     f"{os.getenv('ENV')}/varsling/{tag[0]}_{app}"
                 )
