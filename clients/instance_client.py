@@ -280,6 +280,17 @@ class AltinnInstanceClient:
                 return True
         return False
     
+    def fetch_instances_by_completion(self, instance_complete: bool, header: Optional[Dict[str, str]] = None):
+        url = f"{self.base_platfrom_url}"
+        params = {
+        'org': self.application_owner_organisation,
+        'appId': f"{self.application_owner_organisation}/{self.appname}",
+        'process.isComplete': instance_complete
+        }
+        data_storage_instances = make_api_call(method="GET", url=url, headers=self._get_headers("application/json"), params=params)
+        return extract_instances_ids(data_storage_instances.json())
+
+    
     def complete_instance(self, instanceOwnerPartyId: str, instance_id: str, header: Optional[Dict[str, str]] = None) -> Optional[requests.Response]:
         url = f"{self.basePathApp}/{instanceOwnerPartyId}/{instance_id}/complete"
         return make_api_call(method="POST", url=url, headers=self._get_headers("application/json"))
