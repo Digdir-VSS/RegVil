@@ -94,9 +94,11 @@ def send_reminder():
 def send_seasonal_reminder():
     try:
         api_key = request.headers.get("X-Api-Key")
+        email_subject = request.headers.get("subject")
+        email_body = request.headers.get("email")
         if api_key != os.getenv("REMINDER_API_KEY"):
             return jsonify({"status": "unauthorized", "reminders": []}), 401
-        result, status_code = run_seasonal_reminder_job()
+        result, status_code = run_seasonal_reminder_job(email_subject, email_body)
         return jsonify({"status": "success", "reminders": result}), str(status_code)
 
     except Exception as e:

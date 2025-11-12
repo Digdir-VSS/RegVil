@@ -5,12 +5,10 @@ from pathlib import Path
 import logging
 from dotenv import load_dotenv
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from clients.instance_client import AltinnInstanceClient, get_meta_data_info
 from config.config_loader import load_full_config
-from config.utils import list_blobs_with_prefix, read_blob, parse_date
 from send_warning import run as send_warning
-import pytz
 
 load_dotenv()
 credential = DefaultAzureCredential()
@@ -34,7 +32,7 @@ def check_instance_active(instance_id, instance_meta, tag) -> bool:
     return True 
 
 
-def run() -> tuple[list, int]:
+def run(email_subject, email_body) -> tuple[list, int]:
     logging.info("Checking for instances that have not been answered")
     path_to_config_folder = Path(__file__).parent / "config_files"
     sent_reminders = []
@@ -43,7 +41,7 @@ def run() -> tuple[list, int]:
             config,
         )
     logging.info("Checking for instances that have not been answered")
-    instance_ids = regvil_instance_client.get_stored_instances_ids()
+    instance_ids = regvil_instance_client.fetch_instances_by_completion(instance_complete=False)
     for instance in instance_ids:
         partyID, instance_id = instance["instanceId"].split("/")
         inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
@@ -63,9 +61,6 @@ def run() -> tuple[list, int]:
         if not check_instance_active(instance_id, instance_meta, tag):
             continue
 
-        if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
-                continue
-
         org_number = (
             data.get("Prefill")
                 .get("AnsvarligVirksomhet")
@@ -81,6 +76,8 @@ def run() -> tuple[list, int]:
                     "dato": dato,
                     "app_name": config.app_config.app_name,
                     "prefill_data": data,
+                    "email_subject": email_subject,
+                    "email_body": email_body
                 }
         send_warning(**file)
         sent_reminders.append({
