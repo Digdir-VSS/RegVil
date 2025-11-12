@@ -61,7 +61,7 @@ def run() -> None:
             config,
         )
         logging.info("Checking for instances that have not been answered")
-        instance_ids = regvil_instance_client.get_stored_instances_ids()
+        instance_ids = regvil_instance_client.fetch_instances_by_completion(instance_complete=False)
         for instance in instance_ids:
             partyID, instance_id = instance["instanceId"].split("/")
             inst_resp  = regvil_instance_client.get_instance(partyID, instance_id)
@@ -84,9 +84,6 @@ def run() -> None:
 
             data = data_resp.json()
             if not check_instance_active(instance_id, instance_meta, tag):
-                continue
-
-            if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
                 continue
 
             if dateCreatedFormated > datetime.now(pytz.UTC) - timedelta(days=14):
