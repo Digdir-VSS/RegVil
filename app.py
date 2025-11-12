@@ -17,6 +17,9 @@ def extract_ids_from_source(source_url: str):
     parts = source_url.split("/")
     return parts[-1], parts[-2], parts[-4]  # instance_id, party_id, app-name
 
+@app.route("/health")
+def health():
+    return "ok", 200
 
 @app.route("/httppost", methods=["POST"])
 def handle_event():
@@ -85,7 +88,6 @@ def send_reminder():
     except Exception as e:
         logging.exception("APP:Error while processing send_reminder request")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
