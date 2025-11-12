@@ -122,15 +122,12 @@ def run() -> None:
                 "max_time": max_time
             }
 
-<<<<<<< HEAD
             if instance_data.get("createdBy") != instance_data.get("lastChangedBy"):
                 path_to_file = Path(__file__).parent / "data" / "test_varsling" / "already_answered" / f"{app}_{tag[0]}_send.json"
                 with open(path_to_file, "w", encoding="utf-8") as file:
                     json.dump(log_data, file, ensure_ascii=False)
                 continue
             
-=======
->>>>>>> update/send_reminders
             if dateCreatedFormated > datetime.now(pytz.UTC) - timedelta(days=14):
                 logging.info(f"Instance {instance_id} is not older than 14 days and will not be processed.")
                 path_to_file = Path(__file__).parent / "data" / "test_varsling" / "instance_too_early" / f"{app}_{tag[0]}_send.json"
