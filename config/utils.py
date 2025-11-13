@@ -481,14 +481,10 @@ def is_before_time_delta(date: str, time_delta: Optional[int]=None) -> bool:
     return formated_date < datetime.now(pytz.UTC) - timedelta(days=time_delta)
 
 def parse_date(date_str: str) -> datetime:
-    # Case 1: full ISO with Z (UTC)
-    if "T" in date_str and date_str.endswith("Z"):
-        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-    
-    # Case 2: plain date (no time info) → assume midnight UTC
-    elif len(date_str) == 10:
-        return datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    
-    # Fallback: try more general parsing
-    else:
-        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    if not date_str:
+        raise ValueError("parse_date() expected a non-empty date string")
+    day = date_str.split("T")[0]
+    try:
+        return datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError as e:
+        raise ValueError(f"Invalid date format: {date_str}") from e
