@@ -71,9 +71,8 @@ def main():
         config,
     )
     VisibleAfter =  datetime.now(pytz.UTC).isoformat().replace('+00:00', 'Z') #, "visibleAfter": "2019-05-20T00:00:00Z" 
-    print(VisibleAfter)
     reinstate(instance_id, partyID, app_name, VisibleAfter)
-    #delete(regvil_instance_client, partyID, instance_id)
+    delete(regvil_instance_client, partyID, instance_id)
 
 if __name__ == "__main__":
      main()
