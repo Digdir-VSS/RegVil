@@ -40,12 +40,10 @@ def reinstate(instance_id, party_id, app_name, isVisible):
                     f"APP:Download failed for app name: {app_name} party id: {party_id} instance id: {instance_id}."
                 )
 
-        if app_name == "regvil-2025-slutt":
-                print(
-                    f"APP:Terminal app reached: {app_name}. No further processing."
-                )
-
         download_params["dato"] = isVisible
+        download_params["app_name"] = app_name
+
+        print(download_params)
         result = upload_skjema(**download_params)
         if result == 200:
                 notification_results = send_notification(**download_params)
@@ -65,16 +63,17 @@ def reinstate(instance_id, party_id, app_name, isVisible):
 def main():
     path_to_config_folder = Path(__file__).parent / "config_files"
 
-    app_name = input("Enter the app name to delete the instance from: [regvil-2025-initiell, regvil-2025-oppstart, regvil-2025-status, regvil-2025-slutt]")
-    partyID = input("Please enter Party_id")
-    instance_id = input("Please enter a specific instance ID to delete:")
+    app_name = input("Enter the app name: [regvil-2025-initiell, regvil-2025-oppstart, regvil-2025-status, regvil-2025-slutt]  ")
+    partyID = input("Please enter the Party Id: ")
+    instance_id = input("Please enter a specific instance Id: ")
     config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
     regvil_instance_client = AltinnInstanceClient.init_from_config(
         config,
     )
-    isVisible = datetime.now(pytz.UTC)
-    reinstate(instance_id, partyID, app_name, isVisible)
-    delete(regvil_instance_client, partyID, instance_id)
+    VisibleAfter =  datetime.now(pytz.UTC).isoformat().replace('+00:00', 'Z') #, "visibleAfter": "2019-05-20T00:00:00Z" 
+    print(VisibleAfter)
+    reinstate(instance_id, partyID, app_name, VisibleAfter)
+    #delete(regvil_instance_client, partyID, instance_id)
 
 if __name__ == "__main__":
      main()
