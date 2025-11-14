@@ -43,7 +43,6 @@ def reinstate(instance_id, party_id, app_name, isVisible):
         download_params["dato"] = isVisible
         download_params["app_name"] = app_name
 
-        print(download_params)
         result = upload_skjema(**download_params)
         if result == 200:
                 notification_results = send_notification(**download_params)
