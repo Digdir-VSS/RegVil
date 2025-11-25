@@ -100,3 +100,7 @@ class AltinnVarslingClient:
     def get_shipment_status(self, shipment_id: str) -> Dict[str, Any]:
         url = f"{self.base_url}/future/shipment/{shipment_id}"
         return make_api_call("GET", url=url, headers=self._get_headers())
+    
+    def cancel_notification(self, notification_id: str) -> Dict[str, Any]:
+        url = f"{self.base_url}/orders/{notification_id}/cancel"
+        return make_api_call("PUT", url=url, headers=self._get_headers())
