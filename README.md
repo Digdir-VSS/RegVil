@@ -32,3 +32,4 @@ RegVil uses several Altinn API .
 - **Altinn App API**: Instances GET and POST for sharing the forms data.
 - **Altinn Events API**: Subscription towards our app for getting the callback when a form is submitted.
 - **Altinn Varslinger API**: Order POST to send a notification, PUT to cancel it. Also Status GET to check if the notification was recieved. 
+- **Altinn Storage API**: Not implemented, but the
