@@ -39,7 +39,7 @@ def cancel_notification(varlsing_client: AltinnVarslingClient, notification_id: 
             
      
 
-def reinstate(instance_id, party_id, app_name, isVisible):
+def reinstate(instance_id, party_id, app_name, isVisible, email_subject, email_body):
         print(
                 f"APP:Party ID: {party_id}, Instance ID: {instance_id}, App name: {app_name}"
             )
@@ -56,6 +56,8 @@ def reinstate(instance_id, party_id, app_name, isVisible):
         download_params["app_name"] = app_name
 
         result = upload_skjema(**download_params)
+        download_params["email_subject"] = email_subject
+        download_params["email_body"] = email_body
         if result == 200:
                 notification_results = send_notification(**download_params)
 
@@ -87,7 +89,7 @@ def main():
         config,
     )
     VisibleAfter =  datetime.now(pytz.UTC).isoformat().replace('+00:00', 'Z') #, "visibleAfter": "2019-05-20T00:00:00Z" 
-    reinstate(instance_id, partyID, app_name, VisibleAfter)
+    reinstate(instance_id, partyID, app_name, VisibleAfter, email_subject=config.app_config.emailSubject, email_body=config.app_config.emailBody)
     delete(regvil_instance_client, partyID, instance_id)
     cancel_notification(regvil_varsling_client, notification_id)
 
