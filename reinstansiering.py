@@ -89,7 +89,7 @@ def main():
         config,
     )
     VisibleAfter =  datetime.now(pytz.UTC).isoformat().replace('+00:00', 'Z') #, "visibleAfter": "2019-05-20T00:00:00Z" 
-    reinstate(instance_id, partyID, app_name, VisibleAfter, config.app_config.emailBody, config.app_config.emailSubject)
+    reinstate(instance_id, partyID, app_name, VisibleAfter, email_subject=config.app_config.emailSubject, email_body=config.app_config.emailBody)
     delete(regvil_instance_client, partyID, instance_id)
     cancel_notification(regvil_varsling_client, notification_id)
 
