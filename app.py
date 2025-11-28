@@ -2,11 +2,13 @@ from flask import Flask, request, jsonify
 import logging
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
 from get_initiell_skjema import run as download_skjema
 from upload_single_skjema import run as upload_skjema
 from send_warning import run as send_notification
 from send_reminders import run as run_reminder_job
+from config.config_loader import load_full_config
 
 load_dotenv()
 
@@ -34,6 +36,8 @@ def handle_event():
                 f"APP:Party ID: {party_id}, Instance ID: {instance_id}, App name: {app_name}"
             )
             ## IF CLOUD EVENT
+            path_to_config_folder = Path(__file__).parent / "config_files"
+            config = load_full_config(path_to_config_folder, app_name, os.getenv("ENV"))
             download_params, download_response = download_skjema(
                 party_id=party_id, instance_id=instance_id, app_name=app_name
             )
@@ -53,6 +57,8 @@ def handle_event():
                 return "Workflow complete - no further action.", 200
 
             result = upload_skjema(**download_params)
+            download_params["email_subject"] = config.app_config.emailSubject
+            download_params["email_body"] = config.app_config.emailBody
             if result == 200:
                 notification_results = send_notification(**download_params)
                 if notification_results == 200:
