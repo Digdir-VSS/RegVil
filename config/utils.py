@@ -350,8 +350,8 @@ def add_time_delta(base_date_str: str, time_delta_str: str):
 def next_deadline(d: date) -> date:
         """Find the closest coming 1st Feb or 1st Sep after or equal to given date."""
         year = d.year
-        feb = date(year, 1, 17)
-        sep = date(year, 8, 17)
+        feb = date(year, 4, 1)
+        sep = date(year, 10, 6)
 
         if d < feb:
             return feb
