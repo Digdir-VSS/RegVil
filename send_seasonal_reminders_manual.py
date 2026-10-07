@@ -104,7 +104,7 @@ def main() -> tuple[list, int]:
                     "email_body": email_body
                 }
         
-        #send_warning(**file)
+        send_warning(**file)
         sent_reminders.append({
                     "org_number": org_number,
                     "party_id": partyID,
