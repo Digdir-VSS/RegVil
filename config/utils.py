@@ -358,7 +358,7 @@ def next_deadline(d: date) -> date:
         elif d < sep:
             return sep
         else:
-            return date(year + 1, 1, 17)
+            return date(year + 1, 4, 1)
         
 def next_eval_date(date_str: str, status: dict | None) -> date:
     given_date = datetime.strptime(date_str, "%Y-%m-%d").date()

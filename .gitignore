@@ -52,3 +52,4 @@ dist/
 # pip dependency resolver lock file
 pip-log.txt
 
+storage_export/*
