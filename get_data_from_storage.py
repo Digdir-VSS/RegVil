@@ -23,6 +23,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
@@ -39,7 +40,8 @@ from config.utils import connect_blob, to_utc_aware
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-ENV = "prod"
+# Must match the Maskinporten secret in .env (MASKINPORTEN_SECRET_NAME), or the token request fails.
+ENV = os.getenv("ENV", "prod")
 APPS = [
     "regvil-2025-initiell",
     "regvil-2025-oppstart",
@@ -55,6 +57,13 @@ BLOB_READ_WORKERS = 16
 # A Levert blob is written right after the Downloaded blob of the previous skjema;
 # allow for small clock differences when pairing them.
 CHAIN_TOLERANCE = timedelta(minutes=1)
+
+# Report ids used for testing in production (ZZZ, ZZZa, ZZZb under tiltak 41): not real forms.
+TEST_REPORT_ID_PREFIX = "ZZZ"
+
+
+def is_test_report(report_id: Optional[str]) -> bool:
+    return bool(report_id) and report_id.upper().startswith(TEST_REPORT_ID_PREFIX)
 
 # Form fields that are lists in the data model. In XML a list with a single
 # element looks like a plain child, so these are always forced to lists.
@@ -440,6 +449,8 @@ def check_chain(app_names: List[str], configs: Dict[str, APIConfig], event_logs:
     results = []
     for downloaded_at, app_name, guid, blob in downloads:
         report_id = blob.get("digitaliseringstiltak_report_id")
+        if is_test_report(report_id):
+            continue
         next_app = expected_next_app(configs[app_name], app_name, blob.get("data") or {})
         completed_at = storage_ended.get(app_name, {}).get(guid)
         result = {
@@ -511,6 +522,8 @@ def export_app(app_name: str, config: APIConfig, event_log: Optional[EventLog],
         data_element = get_meta_data_info(instance["data"])
         tags = data_element.get("tags") or []
         report_id = tags[0] if tags else (event_log.report_id_from_levert(instance_guid) if event_log else None)
+        if is_test_report(report_id):
+            continue
 
         form = reader.fetch_form(instance, data_element)
         if form is None:

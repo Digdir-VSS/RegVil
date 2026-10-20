@@ -104,16 +104,16 @@ def main() -> tuple[list, int]:
                     "email_body": email_body
                 }
         
-        send_warning(**file)
-        sent_reminders.append({
-                    "org_number": org_number,
-                    "party_id": partyID,
-                    "instance_id": instance_id,
-                    "org_name":data.get("Prefill").get("AnsvarligVirksomhet").get("Navn"),
-                    "digitaliseringstiltak_report_id": tag[0],
-                    "dato": dato,
-                    "app_name": config.app_config.app_name,
-                })
+        # send_warning(**file)
+        # sent_reminders.append({
+        #             "org_number": org_number,
+        #             "party_id": partyID,
+        #             "instance_id": instance_id,
+        #             "org_name":data.get("Prefill").get("AnsvarligVirksomhet").get("Navn"),
+        #             "digitaliseringstiltak_report_id": tag[0],
+        #             "dato": dato,
+        #             "app_name": config.app_config.app_name,
+        #         })
 
 if __name__ == "__main__":
     main()
